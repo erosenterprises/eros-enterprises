@@ -1,0 +1,92 @@
+import Link from "next/link";
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import type { LeadListItem } from "@/features/leads/types";
+import {
+  LeadPriorityBadge,
+  LeadStatusBadge,
+} from "@/features/leads/components/lead-status-badge";
+import { LEAD_SOURCE_LABELS } from "@/features/leads/constants";
+
+const dateFormatter = new Intl.DateTimeFormat("en-IN", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+
+export function LeadTable({ leads }: { leads: LeadListItem[] }) {
+  return (
+    <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#101113]/90 shadow-[0_30px_80px_rgba(0,0,0,0.25)]">
+      <Table className="min-w-[960px]">
+        <TableHeader>
+          <TableRow className="border-white/10 hover:bg-transparent">
+            <TableHead className="px-6 py-4 text-xs uppercase tracking-[0.22em] text-zinc-500">
+              Lead
+            </TableHead>
+            <TableHead className="px-3 py-4 text-xs uppercase tracking-[0.22em] text-zinc-500">
+              Service
+            </TableHead>
+            <TableHead className="px-3 py-4 text-xs uppercase tracking-[0.22em] text-zinc-500">
+              Status
+            </TableHead>
+            <TableHead className="px-3 py-4 text-xs uppercase tracking-[0.22em] text-zinc-500">
+              Priority
+            </TableHead>
+            <TableHead className="px-3 py-4 text-xs uppercase tracking-[0.22em] text-zinc-500">
+              Source
+            </TableHead>
+            <TableHead className="px-3 py-4 text-xs uppercase tracking-[0.22em] text-zinc-500">
+              Location
+            </TableHead>
+            <TableHead className="px-3 py-4 text-xs uppercase tracking-[0.22em] text-zinc-500">
+              Created
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {leads.map((lead) => (
+            <TableRow key={lead.id} className="border-white/8 hover:bg-white/[0.03]">
+              <TableCell className="px-6 py-5 align-top whitespace-normal">
+                <Link href={`/dashboard/leads/${lead.id}`} className="block space-y-1">
+                  <div className="text-[11px] uppercase tracking-[0.2em] text-amber-200/80">
+                    {lead.leadNumber}
+                  </div>
+                  <div className="font-medium text-white">{lead.name}</div>
+                  <div className="text-sm text-zinc-400">{lead.phone}</div>
+                  <div className="text-sm text-zinc-500">{lead.email ?? "No email provided"}</div>
+                </Link>
+              </TableCell>
+              <TableCell className="px-3 py-5 align-top whitespace-normal text-zinc-200">
+                <div className="font-medium text-white">{lead.serviceInterest}</div>
+                <div className="mt-1 text-sm text-zinc-500">{lead.ctaLocation}</div>
+              </TableCell>
+              <TableCell className="px-3 py-5 align-top">
+                <LeadStatusBadge status={lead.status} />
+              </TableCell>
+              <TableCell className="px-3 py-5 align-top">
+                <LeadPriorityBadge priority={lead.priority} />
+              </TableCell>
+              <TableCell className="px-3 py-5 align-top whitespace-normal">
+                <div className="text-white">{LEAD_SOURCE_LABELS[lead.source]}</div>
+                <div className="mt-1 text-sm text-zinc-500">{lead.sourcePage}</div>
+              </TableCell>
+              <TableCell className="px-3 py-5 align-top whitespace-normal">
+                <div className="text-white">{lead.location ?? "Not provided"}</div>
+                <div className="mt-1 text-sm text-zinc-500">{lead.budgetRange ?? "No budget range"}</div>
+              </TableCell>
+              <TableCell className="px-3 py-5 align-top whitespace-normal text-zinc-400">
+                {dateFormatter.format(lead.createdAt)}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}

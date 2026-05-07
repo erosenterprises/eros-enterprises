@@ -210,9 +210,21 @@ export default function HomePage() {
           />
         </FadeIn>
         <div className="mt-12 grid gap-6 xl:grid-cols-3">
-          <LeadCaptureForm type="contact" />
-          <LeadCaptureForm type="siteVisit" />
-          <LeadCaptureForm type="quote" />
+          <LeadCaptureForm
+            variant="homepageEnquiry"
+            sourcePage="/"
+            ctaLocation="homepage-lead-capture-enquiry"
+          />
+          <LeadCaptureForm
+            variant="siteVisit"
+            sourcePage="/"
+            ctaLocation="homepage-lead-capture-site-visit"
+          />
+          <LeadCaptureForm
+            variant="quote"
+            sourcePage="/"
+            ctaLocation="homepage-lead-capture-quote"
+          />
         </div>
         <div className="mt-12">
           <CtaBanner

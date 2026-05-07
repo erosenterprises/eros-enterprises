@@ -189,7 +189,7 @@ export const homeFaq = [
   {
     question: "Is the website form connected to backend systems already?",
     answer:
-      "Not in this phase. The forms are production-ready from a UI standpoint and intentionally left unconnected to database workflows for now.",
+      "Yes. Website submissions flow into the CRM lead database with source tracking, activity logging, and status-ready records for the sales team.",
   },
 ];
 

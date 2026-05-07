@@ -1,3 +1,7 @@
-import type { LeadInput } from "@/schemas/lead";
+export type {
+  LeadCaptureActionResponse,
+  LeadDetailRecord,
+  LeadListItem,
+} from "@/features/leads/types";
 
-export type CreateLeadInput = LeadInput;
+export type { LeadInput as CreateLeadInput } from "@/schemas/lead";

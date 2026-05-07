@@ -152,7 +152,12 @@ export function ServiceTemplatePage({ service }: { service: ServiceDefinition })
               />
             </FadeIn>
             <div className="mt-8">
-              <LeadCaptureForm type="quote" />
+              <LeadCaptureForm
+                variant="serviceCta"
+                sourcePage={service.href}
+                ctaLocation={`service-page-${service.slug}-quote-form`}
+                defaultServiceInterest={service.name}
+              />
             </div>
           </div>
           <FadeIn delay={0.1}>

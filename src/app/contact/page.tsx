@@ -17,7 +17,7 @@ export default function ContactPage() {
       <PageHero
         eyebrow="Contact"
         title="Start the conversation with a quote request, site visit, or direct enquiry."
-        description="The public-site forms in this phase are intentionally UI-only, but the experience is ready for production integration."
+        description="Choose the route that matches your stage and the enquiry will flow directly into the Eros CRM."
       />
       <Section>
         <div className="grid gap-8 xl:grid-cols-[0.95fr_1.05fr]">
@@ -53,9 +53,21 @@ export default function ContactPage() {
             <FaqAccordion items={contactFaq} />
           </div>
           <div className="grid gap-6">
-            <LeadCaptureForm type="contact" />
-            <LeadCaptureForm type="siteVisit" />
-            <LeadCaptureForm type="quote" />
+            <LeadCaptureForm
+              variant="contact"
+              sourcePage="/contact"
+              ctaLocation="contact-page-direct-enquiry"
+            />
+            <LeadCaptureForm
+              variant="siteVisit"
+              sourcePage="/contact"
+              ctaLocation="contact-page-site-visit"
+            />
+            <LeadCaptureForm
+              variant="quote"
+              sourcePage="/contact"
+              ctaLocation="contact-page-quote-request"
+            />
           </div>
         </div>
       </Section>
