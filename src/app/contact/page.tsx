@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 
 import { FaqAccordion } from "@/components/website/faq-accordion";
-import { LeadCaptureForm } from "@/components/website/lead-capture-form";
 import { PageHero } from "@/components/website/page-hero";
 import { Section } from "@/components/website/section";
 import { SectionHeader } from "@/components/website/section-header";
 import { contactFaq, pageMetadata } from "@/content/website";
 import { siteConfig } from "@/config/site";
+import { LeadCaptureForm } from "@/features/leads/components/lead-capture-form";
 import { buildMetadata } from "@/lib/metadata";
 
 export const metadata: Metadata = buildMetadata(pageMetadata.contact);

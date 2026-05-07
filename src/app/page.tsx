@@ -14,7 +14,6 @@ import { ServiceCard } from "@/components/website/service-card";
 import { StatBlock } from "@/components/website/stat-block";
 import { TestimonialCard } from "@/components/website/testimonial-card";
 import { WebsiteIcon } from "@/components/website/icon-map";
-import { LeadCaptureForm } from "@/components/website/lead-capture-form";
 import {
   featuredProjects,
   heroMetrics,
@@ -25,6 +24,7 @@ import {
   trustIndicators,
   whyChooseEros,
 } from "@/content/website";
+import { LeadCaptureForm } from "@/features/leads/components/lead-capture-form";
 
 export default function HomePage() {
   return (

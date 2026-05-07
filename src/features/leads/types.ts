@@ -1,4 +1,11 @@
-import type { Lead, LeadPriority, LeadSource, LeadStatus } from "@prisma/client";
+import type {
+  ActivityType,
+  Lead,
+  LeadPriority,
+  LeadSource,
+  LeadStatus,
+  SiteVisitStatus,
+} from "@prisma/client";
 
 import type { ActionResponse } from "@/lib/action-response";
 import type { LeadCaptureField } from "@/features/leads/schemas";
@@ -12,6 +19,15 @@ export type LeadCaptureActionResponse = ActionResponse<
   LeadCaptureResultData,
   LeadCaptureField
 >;
+
+export type LeadFilters = {
+  query?: string;
+  status?: string;
+  service?: string;
+  source?: string;
+  priority?: string;
+  assignee?: string;
+};
 
 export type LeadListItem = Pick<
   Lead,
@@ -29,7 +45,25 @@ export type LeadListItem = Pick<
   | "status"
   | "priority"
   | "createdAt"
->;
+> & {
+  assignedTo: {
+    id: string;
+    firstName: string;
+    lastName: string | null;
+  } | null;
+};
+
+export type LeadActivityItem = {
+  id: string;
+  type: ActivityType;
+  action: string;
+  description: string | null;
+  occurredAt: Date;
+  user: {
+    firstName: string;
+    lastName: string | null;
+  } | null;
+};
 
 export type LeadDetailRecord = Lead & {
   assignedTo: {
@@ -37,13 +71,28 @@ export type LeadDetailRecord = Lead & {
     firstName: string;
     lastName: string | null;
     email: string;
+    role: {
+      name: string;
+    };
   } | null;
-  activities: Array<{
+  customer: {
     id: string;
-    action: string;
-    description: string | null;
-    occurredAt: Date;
+    customerNumber: string;
+    legalName: string;
+    status: string;
+  } | null;
+  siteVisits: Array<{
+    id: string;
+    visitNumber: string;
+    scheduledAt: Date;
+    address: string;
+    status: SiteVisitStatus;
+    assignedEngineer: {
+      firstName: string;
+      lastName: string | null;
+    } | null;
   }>;
+  activities: LeadActivityItem[];
 };
 
 export type LeadStatusValue = LeadStatus;

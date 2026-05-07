@@ -17,6 +17,8 @@
 /.next/
 /.next-build/
 /.next-prod/
+/.next-crm-build*/
+/.next-site-build/
 /out/
 
 # production
