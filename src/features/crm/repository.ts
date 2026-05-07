@@ -6,7 +6,7 @@ import {
 import { prisma } from "@/lib/prisma";
 
 export async function getAssignableUsers() {
-  const [salesUsers, engineerUsers] = await prisma.$transaction([
+  const [salesUsers, engineerUsers] = await Promise.all([
     prisma.user.findMany({
       where: {
         status: "ACTIVE",
@@ -74,7 +74,7 @@ export async function getDashboardOverview() {
     recentLeads,
     upcomingSiteVisits,
     leadStatuses,
-  ] = await prisma.$transaction([
+  ] = await Promise.all([
     prisma.lead.count(),
     prisma.lead.count({ where: { status: LeadStatus.NEW } }),
     prisma.lead.count({ where: { status: LeadStatus.CONTACTED } }),

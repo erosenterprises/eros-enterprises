@@ -142,7 +142,7 @@ export async function getLeadsForDashboard(
 }
 
 export async function getLeadFilterOptions() {
-  const [services, users] = await prisma.$transaction([
+  const [services, users] = await Promise.all([
     prisma.lead.findMany({
       distinct: ["serviceInterest"],
       orderBy: { serviceInterest: "asc" },
@@ -167,7 +167,9 @@ export async function getLeadFilterOptions() {
   ]);
 
   return {
-    services: services.map((item) => item.serviceInterest),
+    services: services
+      .map((item) => item.serviceInterest)
+      .filter((service, index, allServices) => allServices.indexOf(service) === index),
     users,
   };
 }
