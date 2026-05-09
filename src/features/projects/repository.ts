@@ -14,6 +14,7 @@ import {
   getDerivedAmcStatus,
   isProjectCompletedStage,
 } from "@/features/projects/utils";
+import { withDatabaseFallback } from "@/lib/database";
 
 export type ProjectFilters = {
   query?: string;
@@ -61,6 +62,12 @@ function buildAmcWhere(filters: AmcFilters): Prisma.AmcPlanWhereInput {
 }
 
 export async function getProjectManagementOptions() {
+  return withDatabaseFallback("projects.getProjectManagementOptions", {
+    acceptedQuotations: [],
+    customers: [],
+    managers: [],
+    engineers: [],
+  }, async () => {
   const [acceptedQuotations, customers, managers, engineers] = await Promise.all([
     prisma.quotation.findMany({
       where: {
@@ -141,18 +148,24 @@ export async function getProjectManagementOptions() {
     }),
   ]);
 
-  return {
-    acceptedQuotations: acceptedQuotations.map((quotation) => ({
-      ...quotation,
-      totalAmount: decimalToNumber(quotation.totalAmount),
-    })),
-    customers,
-    managers,
-    engineers,
-  };
+    return {
+      acceptedQuotations: acceptedQuotations.map((quotation) => ({
+        ...quotation,
+        totalAmount: decimalToNumber(quotation.totalAmount),
+      })),
+      customers,
+      managers,
+      engineers,
+    };
+  });
 }
 
 export async function getAmcManagementOptions() {
+  return withDatabaseFallback("projects.getAmcManagementOptions", {
+    customers: [],
+    projects: [],
+    services: [],
+  }, async () => {
   const [customers, projects, services] = await Promise.all([
     prisma.customer.findMany({
       orderBy: [{ legalName: "asc" }],
@@ -188,14 +201,16 @@ export async function getAmcManagementOptions() {
     }),
   ]);
 
-  return {
-    customers,
-    projects,
-    services,
-  };
+    return {
+      customers,
+      projects,
+      services,
+    };
+  });
 }
 
 export async function getProjects(filters: ProjectFilters = {}) {
+  return withDatabaseFallback("projects.getProjects", [], async () => {
   const projects = await prisma.project.findMany({
     where: buildProjectWhere(filters),
     orderBy: [{ createdAt: "desc" }],
@@ -240,15 +255,16 @@ export async function getProjects(filters: ProjectFilters = {}) {
     },
   });
 
-  return projects.map((project) => ({
-    ...project,
-    quotation: project.quotation
-      ? {
-          ...project.quotation,
-          totalAmount: decimalToNumber(project.quotation.totalAmount),
-        }
-      : null,
-  }));
+    return projects.map((project) => ({
+      ...project,
+      quotation: project.quotation
+        ? {
+            ...project.quotation,
+            totalAmount: decimalToNumber(project.quotation.totalAmount),
+          }
+        : null,
+    }));
+  });
 }
 
 export async function getProjectDetail(projectId: string) {
@@ -382,6 +398,7 @@ export async function getProjectDetail(projectId: string) {
 }
 
 export async function getAmcPlans(filters: AmcFilters = {}) {
+  return withDatabaseFallback("projects.getAmcPlans", [], async () => {
   const plans = await prisma.amcPlan.findMany({
     where: buildAmcWhere(filters),
     orderBy: [{ renewalDate: "asc" }],
@@ -416,13 +433,14 @@ export async function getAmcPlans(filters: AmcFilters = {}) {
     },
   });
 
-  return plans
-    .map((plan) => ({
-      ...plan,
-      effectiveStatus: getDerivedAmcStatus(plan.status, plan.renewalDate, plan.endDate),
-      daysUntilRenewal: getDaysUntil(plan.renewalDate),
-    }))
-    .filter((plan) => !filters.status || plan.effectiveStatus === (filters.status as AmcStatus));
+    return plans
+      .map((plan) => ({
+        ...plan,
+        effectiveStatus: getDerivedAmcStatus(plan.status, plan.renewalDate, plan.endDate),
+        daysUntilRenewal: getDaysUntil(plan.renewalDate),
+      }))
+      .filter((plan) => !filters.status || plan.effectiveStatus === (filters.status as AmcStatus));
+  });
 }
 
 export async function getAmcDetail(amcPlanId: string) {
@@ -491,6 +509,10 @@ export async function getAmcDetail(amcPlanId: string) {
 }
 
 export async function getProjectDashboardMetrics() {
+  return withDatabaseFallback(
+    "projects.getProjectDashboardMetrics",
+    { totalProjects: 0, activeProjects: 0, completedProjects: 0, delayedOrOnHoldProjects: 0 },
+    async () => {
   const projects = await prisma.project.findMany({
     select: {
       stage: true,
@@ -521,15 +543,21 @@ export async function getProjectDashboardMetrics() {
     }
   }
 
-  return {
-    totalProjects: projects.length,
-    activeProjects,
-    completedProjects,
-    delayedOrOnHoldProjects,
-  };
+      return {
+        totalProjects: projects.length,
+        activeProjects,
+        completedProjects,
+        delayedOrOnHoldProjects,
+      };
+    },
+  );
 }
 
 export async function getAmcDashboardMetrics() {
+  return withDatabaseFallback(
+    "projects.getAmcDashboardMetrics",
+    { totalAmcPlans: 0, dueSoonCount: 0, expiredCount: 0, upcomingRenewals: [] },
+    async () => {
   const plans = await prisma.amcPlan.findMany({
     orderBy: [{ renewalDate: "asc" }],
     select: {
@@ -558,12 +586,14 @@ export async function getAmcDashboardMetrics() {
     daysUntilRenewal: getDaysUntil(plan.renewalDate),
   }));
 
-  return {
-    totalAmcPlans: enriched.length,
-    dueSoonCount: enriched.filter((plan) => plan.effectiveStatus === "DUE_SOON").length,
-    expiredCount: enriched.filter((plan) => plan.effectiveStatus === "EXPIRED").length,
-    upcomingRenewals: enriched
-      .filter((plan) => plan.effectiveStatus !== "CANCELLED" && plan.effectiveStatus !== "EXPIRED")
-      .slice(0, 5),
-  };
+      return {
+        totalAmcPlans: enriched.length,
+        dueSoonCount: enriched.filter((plan) => plan.effectiveStatus === "DUE_SOON").length,
+        expiredCount: enriched.filter((plan) => plan.effectiveStatus === "EXPIRED").length,
+        upcomingRenewals: enriched
+          .filter((plan) => plan.effectiveStatus !== "CANCELLED" && plan.effectiveStatus !== "EXPIRED")
+          .slice(0, 5),
+      };
+    },
+  );
 }

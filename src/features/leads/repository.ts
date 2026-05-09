@@ -11,6 +11,7 @@ import {
 
 import { createActivityLog } from "@/features/crm/activity";
 import { createLeadNumber } from "@/features/crm/numbering";
+import { withDatabaseFallback } from "@/lib/database";
 import { prisma } from "@/lib/prisma";
 import type { LeadCreateInput } from "@/features/leads/schemas";
 import type {
@@ -114,66 +115,74 @@ export async function createLead(input: LeadCreateInput) {
 export async function getLeadsForDashboard(
   filters: LeadFilters = {},
 ): Promise<LeadListItem[]> {
-  return prisma.lead.findMany({
-    where: buildLeadWhere(filters),
-    orderBy: [{ createdAt: "desc" }],
-    select: {
-      id: true,
-      leadNumber: true,
-      name: true,
-      phone: true,
-      email: true,
-      serviceInterest: true,
-      source: true,
-      sourcePage: true,
-      ctaLocation: true,
-      location: true,
-      budgetRange: true,
-      status: true,
-      priority: true,
-      createdAt: true,
-      assignedTo: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-        },
-      },
-    },
-  });
-}
-
-export async function getLeadFilterOptions() {
-  const [services, users] = await Promise.all([
+  return withDatabaseFallback("leads.getLeadsForDashboard", [], () =>
     prisma.lead.findMany({
-      distinct: ["serviceInterest"],
-      orderBy: { serviceInterest: "asc" },
-      select: { serviceInterest: true },
-    }),
-    prisma.user.findMany({
-      where: {
-        status: "ACTIVE",
-        role: {
-          name: {
-            in: ["SUPER_ADMIN", "SALES_MANAGER", "OPERATIONS_MANAGER"],
+      where: buildLeadWhere(filters),
+      orderBy: [{ createdAt: "desc" }],
+      select: {
+        id: true,
+        leadNumber: true,
+        name: true,
+        phone: true,
+        email: true,
+        serviceInterest: true,
+        source: true,
+        sourcePage: true,
+        ctaLocation: true,
+        location: true,
+        budgetRange: true,
+        status: true,
+        priority: true,
+        createdAt: true,
+        assignedTo: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
           },
         },
       },
-      orderBy: [{ firstName: "asc" }],
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-      },
     }),
-  ]);
+  );
+}
 
-  return {
-    services: services
-      .map((item) => item.serviceInterest)
-      .filter((service, index, allServices) => allServices.indexOf(service) === index),
-    users,
-  };
+export async function getLeadFilterOptions() {
+  return withDatabaseFallback(
+    "leads.getLeadFilterOptions",
+    { services: [], users: [] },
+    async () => {
+      const [services, users] = await Promise.all([
+        prisma.lead.findMany({
+          distinct: ["serviceInterest"],
+          orderBy: { serviceInterest: "asc" },
+          select: { serviceInterest: true },
+        }),
+        prisma.user.findMany({
+          where: {
+            status: "ACTIVE",
+            role: {
+              name: {
+                in: ["SUPER_ADMIN", "SALES_MANAGER", "OPERATIONS_MANAGER"],
+              },
+            },
+          },
+          orderBy: [{ firstName: "asc" }],
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        }),
+      ]);
+
+      return {
+        services: services
+          .map((item) => item.serviceInterest)
+          .filter((service, index, allServices) => allServices.indexOf(service) === index),
+        users,
+      };
+    },
+  );
 }
 
 export async function getLeadDetail(leadId: string): Promise<LeadDetailRecord | null> {

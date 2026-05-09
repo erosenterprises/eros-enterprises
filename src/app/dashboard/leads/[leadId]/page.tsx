@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { DashboardDataUnavailable } from "@/features/crm/components/dashboard-data-unavailable";
 import { getAssignableUsers } from "@/features/crm/repository";
 import { LeadDetailView } from "@/features/leads/components/lead-detail-view";
 import { getLeadDetail } from "@/features/leads/repository";
@@ -10,10 +11,17 @@ export default async function DashboardLeadDetailPage(
   props: PageProps<"/dashboard/leads/[leadId]">,
 ) {
   const { leadId } = await props.params;
-  const [lead, assignableUsers] = await Promise.all([
-    getLeadDetail(leadId),
-    getAssignableUsers(),
-  ]);
+  let lead;
+  let assignableUsers;
+
+  try {
+    [lead, assignableUsers] = await Promise.all([
+      getLeadDetail(leadId),
+      getAssignableUsers(),
+    ]);
+  } catch {
+    return <DashboardDataUnavailable title="Lead data unavailable" />;
+  }
 
   if (!lead) {
     notFound();

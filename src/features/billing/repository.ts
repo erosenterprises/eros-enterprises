@@ -7,6 +7,7 @@ import {
 } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
+import { withDatabaseFallback } from "@/lib/database";
 import {
   decimalToNumber,
   getDerivedInvoiceStatus,
@@ -178,155 +179,172 @@ function mapInvoiceLink<
 }
 
 export async function getBillingDashboardMetrics() {
-  const [quotations, invoices, payments] = await prisma.$transaction([
-    prisma.quotation.findMany({
-      select: {
-        totalAmount: true,
-        status: true,
-        validUntil: true,
-      },
-    }),
-    prisma.invoice.findMany({
-      select: {
-        totalAmount: true,
-        balanceAmount: true,
-        status: true,
-        dueDate: true,
-      },
-    }),
-    prisma.payment.findMany({
-      select: {
-        amount: true,
-      },
-    }),
-  ]);
+  return withDatabaseFallback(
+    "billing.getBillingDashboardMetrics",
+    {
+      quotedValue: 0,
+      invoicedValue: 0,
+      collectedAmount: 0,
+      pendingAmount: 0,
+    },
+    async () => {
+      const [quotations, invoices, payments] = await prisma.$transaction([
+        prisma.quotation.findMany({
+          select: {
+            totalAmount: true,
+            status: true,
+            validUntil: true,
+          },
+        }),
+        prisma.invoice.findMany({
+          select: {
+            totalAmount: true,
+            balanceAmount: true,
+            status: true,
+            dueDate: true,
+          },
+        }),
+        prisma.payment.findMany({
+          select: {
+            amount: true,
+          },
+        }),
+      ]);
 
-  const quotedValue = quotations.reduce((sum, quotation) => {
-    const status = getDerivedQuotationStatus(quotation.status, quotation.validUntil);
+      const quotedValue = quotations.reduce((sum, quotation) => {
+        const status = getDerivedQuotationStatus(quotation.status, quotation.validUntil);
 
-    if (status === "REJECTED") {
-      return sum;
-    }
+        if (status === "REJECTED") {
+          return sum;
+        }
 
-    return sum + decimalToNumber(quotation.totalAmount);
-  }, 0);
+        return sum + decimalToNumber(quotation.totalAmount);
+      }, 0);
 
-  const invoicedValue = invoices.reduce((sum, invoice) => {
-    if (invoice.status === "CANCELLED") {
-      return sum;
-    }
+      const invoicedValue = invoices.reduce((sum, invoice) => {
+        if (invoice.status === "CANCELLED") {
+          return sum;
+        }
 
-    return sum + decimalToNumber(invoice.totalAmount);
-  }, 0);
+        return sum + decimalToNumber(invoice.totalAmount);
+      }, 0);
 
-  const collectedAmount = payments.reduce(
-    (sum, payment) => sum + decimalToNumber(payment.amount),
-    0,
+      const collectedAmount = payments.reduce(
+        (sum, payment) => sum + decimalToNumber(payment.amount),
+        0,
+      );
+
+      const pendingAmount = invoices.reduce((sum, invoice) => {
+        const effectiveStatus = getDerivedInvoiceStatus(
+          invoice.status,
+          invoice.dueDate,
+          decimalToNumber(invoice.balanceAmount),
+        );
+
+        if (effectiveStatus === "CANCELLED" || effectiveStatus === "PAID") {
+          return sum;
+        }
+
+        return sum + decimalToNumber(invoice.balanceAmount);
+      }, 0);
+
+      return {
+        quotedValue,
+        invoicedValue,
+        collectedAmount,
+        pendingAmount,
+      };
+    },
   );
-
-  const pendingAmount = invoices.reduce((sum, invoice) => {
-    const effectiveStatus = getDerivedInvoiceStatus(
-      invoice.status,
-      invoice.dueDate,
-      decimalToNumber(invoice.balanceAmount),
-    );
-
-    if (effectiveStatus === "CANCELLED" || effectiveStatus === "PAID") {
-      return sum;
-    }
-
-    return sum + decimalToNumber(invoice.balanceAmount);
-  }, 0);
-
-  return {
-    quotedValue,
-    invoicedValue,
-    collectedAmount,
-    pendingAmount,
-  };
 }
 
 export async function getBillingOptions() {
-  const leads = await prisma.lead.findMany({
-    orderBy: [{ createdAt: "desc" }],
-    select: {
-      id: true,
-      leadNumber: true,
-      name: true,
-      serviceInterest: true,
-      customer: {
+  return withDatabaseFallback(
+    "billing.getBillingOptions",
+    { leads: [], customers: [], services: [], openInvoices: [] },
+    async () => {
+      const leads = await prisma.lead.findMany({
+        orderBy: [{ createdAt: "desc" }],
+        select: {
+          id: true,
+          leadNumber: true,
+          name: true,
+          serviceInterest: true,
+          customer: {
+            select: {
+              id: true,
+              customerNumber: true,
+              legalName: true,
+            },
+          },
+        },
+      });
+      const customers = await prisma.customer.findMany({
+        orderBy: [{ legalName: "asc" }],
         select: {
           id: true,
           customerNumber: true,
           legalName: true,
+          primaryContactName: true,
         },
-      },
-    },
-  });
-  const customers = await prisma.customer.findMany({
-    orderBy: [{ legalName: "asc" }],
-    select: {
-      id: true,
-      customerNumber: true,
-      legalName: true,
-      primaryContactName: true,
-    },
-  });
-  const services = await prisma.service.findMany({
-    where: { isActive: true },
-    orderBy: [{ name: "asc" }],
-    select: {
-      id: true,
-      code: true,
-      name: true,
-    },
-  });
-  const openInvoices = await prisma.invoice.findMany({
-    where: {
-      status: {
-        not: "CANCELLED",
-      },
-    },
-    orderBy: [{ createdAt: "desc" }],
-    select: {
-      id: true,
-      invoiceNumber: true,
-      totalAmount: true,
-      paidAmount: true,
-      balanceAmount: true,
-      dueDate: true,
-      status: true,
-      customer: {
+      });
+      const services = await prisma.service.findMany({
+        where: { isActive: true },
+        orderBy: [{ name: "asc" }],
         select: {
-          legalName: true,
-        },
-      },
-      lead: {
-        select: {
+          id: true,
+          code: true,
           name: true,
         },
-      },
-    },
-  });
+      });
+      const openInvoices = await prisma.invoice.findMany({
+        where: {
+          status: {
+            not: "CANCELLED",
+          },
+        },
+        orderBy: [{ createdAt: "desc" }],
+        select: {
+          id: true,
+          invoiceNumber: true,
+          totalAmount: true,
+          paidAmount: true,
+          balanceAmount: true,
+          dueDate: true,
+          status: true,
+          customer: {
+            select: {
+              legalName: true,
+            },
+          },
+          lead: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
 
-  return {
-    leads,
-    customers,
-    services,
-    openInvoices: openInvoices
-      .map((invoice) => ({
-        ...invoice,
-        totalAmount: decimalToNumber(invoice.totalAmount),
-        paidAmount: decimalToNumber(invoice.paidAmount),
-        balanceAmount: decimalToNumber(invoice.balanceAmount),
-        effectiveStatus: getDerivedInvoiceStatus(
-          invoice.status,
-          invoice.dueDate,
-          decimalToNumber(invoice.balanceAmount),
-        ),
-      }))
-      .filter((invoice) => invoice.balanceAmount > 0),
-  };
+      return {
+        leads,
+        customers,
+        services,
+        openInvoices: openInvoices
+          .map((invoice) => ({
+            ...invoice,
+            totalAmount: decimalToNumber(invoice.totalAmount),
+            paidAmount: decimalToNumber(invoice.paidAmount),
+            balanceAmount: decimalToNumber(invoice.balanceAmount),
+            effectiveStatus: getDerivedInvoiceStatus(
+              invoice.status,
+              invoice.dueDate,
+              decimalToNumber(invoice.balanceAmount),
+            ),
+          }))
+          .filter((invoice) => invoice.balanceAmount > 0),
+      };
+    },
+  );
 }
 
 export async function getQuotations(filters: BillingFilters = {}) {
@@ -474,35 +492,37 @@ export async function getQuotationDetail(quotationId: string) {
 }
 
 export async function getConvertibleQuotations() {
-  const quotations = await prisma.quotation.findMany({
-    where: {
-      status: "ACCEPTED",
-      invoice: null,
-    },
-    orderBy: [{ acceptedAt: "desc" }, { createdAt: "desc" }],
-    select: {
-      id: true,
-      quotationNumber: true,
-      title: true,
-      totalAmount: true,
-      acceptedAt: true,
-      customer: {
-        select: {
-          legalName: true,
+  return withDatabaseFallback("billing.getConvertibleQuotations", [], async () => {
+    const quotations = await prisma.quotation.findMany({
+      where: {
+        status: "ACCEPTED",
+        invoice: null,
+      },
+      orderBy: [{ acceptedAt: "desc" }, { createdAt: "desc" }],
+      select: {
+        id: true,
+        quotationNumber: true,
+        title: true,
+        totalAmount: true,
+        acceptedAt: true,
+        customer: {
+          select: {
+            legalName: true,
+          },
+        },
+        lead: {
+          select: {
+            name: true,
+          },
         },
       },
-      lead: {
-        select: {
-          name: true,
-        },
-      },
-    },
-  });
+    });
 
-  return quotations.map((quotation) => ({
-    ...quotation,
-    totalAmount: decimalToNumber(quotation.totalAmount),
-  }));
+    return quotations.map((quotation) => ({
+      ...quotation,
+      totalAmount: decimalToNumber(quotation.totalAmount),
+    }));
+  });
 }
 
 export async function getInvoices(filters: BillingFilters = {}) {
@@ -663,38 +683,40 @@ export async function getInvoiceDetail(invoiceId: string) {
 }
 
 export async function getPayments(query?: string) {
-  const payments = await prisma.payment.findMany({
-    where: buildPaymentWhere(query),
-    orderBy: [{ paidAt: "desc" }],
-    include: {
-      invoice: {
-        select: {
-          id: true,
-          invoiceNumber: true,
-          status: true,
-          dueDate: true,
-          balanceAmount: true,
+  return withDatabaseFallback("billing.getPayments", [], async () => {
+    const payments = await prisma.payment.findMany({
+      where: buildPaymentWhere(query),
+      orderBy: [{ paidAt: "desc" }],
+      include: {
+        invoice: {
+          select: {
+            id: true,
+            invoiceNumber: true,
+            status: true,
+            dueDate: true,
+            balanceAmount: true,
+          },
+        },
+        customer: {
+          select: {
+            id: true,
+            customerNumber: true,
+            legalName: true,
+          },
+        },
+        lead: {
+          select: {
+            id: true,
+            leadNumber: true,
+            name: true,
+          },
         },
       },
-      customer: {
-        select: {
-          id: true,
-          customerNumber: true,
-          legalName: true,
-        },
-      },
-      lead: {
-        select: {
-          id: true,
-          leadNumber: true,
-          name: true,
-        },
-      },
-    },
-  });
+    });
 
-  return payments.map((payment) => ({
-    ...mapPaymentSummary(payment),
-    invoice: payment.invoice ? mapInvoiceLink(payment.invoice) : null,
-  }));
+    return payments.map((payment) => ({
+      ...mapPaymentSummary(payment),
+      invoice: payment.invoice ? mapInvoiceLink(payment.invoice) : null,
+    }));
+  });
 }

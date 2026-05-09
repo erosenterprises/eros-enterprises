@@ -7,6 +7,7 @@ import {
 } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
+import { withDatabaseFallback } from "@/lib/database";
 
 export type CustomerFilters = {
   query?: string;
@@ -38,28 +39,30 @@ function buildCustomerWhere(filters: CustomerFilters): Prisma.CustomerWhereInput
 }
 
 export async function getCustomers(filters: CustomerFilters = {}) {
-  return prisma.customer.findMany({
-    where: buildCustomerWhere(filters),
-    orderBy: [{ createdAt: "desc" }],
-    select: {
-      id: true,
-      customerNumber: true,
-      legalName: true,
-      primaryContactName: true,
-      phone: true,
-      email: true,
-      type: true,
-      status: true,
-      createdAt: true,
-      lead: {
-        select: {
-          id: true,
-          leadNumber: true,
-          name: true,
+  return withDatabaseFallback("customers.getCustomers", [], () =>
+    prisma.customer.findMany({
+      where: buildCustomerWhere(filters),
+      orderBy: [{ createdAt: "desc" }],
+      select: {
+        id: true,
+        customerNumber: true,
+        legalName: true,
+        primaryContactName: true,
+        phone: true,
+        email: true,
+        type: true,
+        status: true,
+        createdAt: true,
+        lead: {
+          select: {
+            id: true,
+            leadNumber: true,
+            name: true,
+          },
         },
       },
-    },
-  });
+    }),
+  );
 }
 
 export async function getCustomerDetail(customerId: string) {
@@ -168,11 +171,17 @@ export async function findExistingCustomerByContact(input: {
 }
 
 export async function getCustomerMetrics() {
-  const [totalCustomers, activeCustomers, onboardingCustomers] = await prisma.$transaction([
-    prisma.customer.count(),
-    prisma.customer.count({ where: { status: CustomerStatus.ACTIVE } }),
-    prisma.customer.count({ where: { status: CustomerStatus.ONBOARDING } }),
-  ]);
+  return withDatabaseFallback(
+    "customers.getCustomerMetrics",
+    { totalCustomers: 0, activeCustomers: 0, onboardingCustomers: 0 },
+    async () => {
+      const [totalCustomers, activeCustomers, onboardingCustomers] = await prisma.$transaction([
+        prisma.customer.count(),
+        prisma.customer.count({ where: { status: CustomerStatus.ACTIVE } }),
+        prisma.customer.count({ where: { status: CustomerStatus.ONBOARDING } }),
+      ]);
 
-  return { totalCustomers, activeCustomers, onboardingCustomers };
+      return { totalCustomers, activeCustomers, onboardingCustomers };
+    },
+  );
 }

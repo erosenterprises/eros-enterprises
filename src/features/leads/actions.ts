@@ -6,6 +6,7 @@ import { createLead } from "@/features/leads/repository";
 import { leadCaptureServerSchema, type LeadCaptureInput } from "@/features/leads/schemas";
 import type { LeadCaptureActionResponse } from "@/features/leads/types";
 import { actionFailure, actionSuccess } from "@/lib/action-response";
+import { getDatabaseErrorMessage, isRecoverableDatabaseError } from "@/lib/database";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function createLeadAction(
@@ -40,6 +41,10 @@ export async function createLeadAction(
     });
   } catch (error) {
     console.error("Lead creation failed", error);
+
+    if (isRecoverableDatabaseError(error)) {
+      return actionFailure(getDatabaseErrorMessage(error));
+    }
 
     return actionFailure(
       "We could not submit your enquiry right now. Please try again in a moment.",
