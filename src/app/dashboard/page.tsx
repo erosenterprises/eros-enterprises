@@ -61,30 +61,34 @@ export default async function DashboardPage() {
             <CardTitle className="text-white">Recent Leads</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="space-y-4">
-              {overview.recentLeads.map((lead) => (
-                <Link
-                  key={lead.id}
-                  href={`/dashboard/leads/${lead.id}`}
-                  className="block rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4 transition hover:border-white/15"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <div className="text-xs uppercase tracking-[0.18em] text-amber-200/90">
-                        {lead.leadNumber}
+            {overview.recentLeads.length > 0 ? (
+              <div className="space-y-4">
+                {overview.recentLeads.map((lead) => (
+                  <Link
+                    key={lead.id}
+                    href={`/dashboard/leads/${lead.id}`}
+                    className="block rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4 transition hover:border-white/15"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <div className="text-xs uppercase tracking-[0.18em] text-amber-200/90">
+                          {lead.leadNumber}
+                        </div>
+                        <div className="mt-2 font-medium text-white">{lead.name}</div>
+                        <div className="mt-1 text-sm text-zinc-400">{lead.phone}</div>
                       </div>
-                      <div className="mt-2 font-medium text-white">{lead.name}</div>
-                      <div className="mt-1 text-sm text-zinc-400">{lead.phone}</div>
+                      <div className="flex flex-wrap gap-2">
+                        <LeadStatusBadge status={lead.status} />
+                        <LeadPriorityBadge priority={lead.priority} />
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      <LeadStatusBadge status={lead.status} />
-                      <LeadPriorityBadge priority={lead.priority} />
-                    </div>
-                  </div>
-                  <div className="mt-3 text-sm text-zinc-300">{lead.serviceInterest}</div>
-                </Link>
-              ))}
-            </div>
+                    <div className="mt-3 text-sm text-zinc-300">{lead.serviceInterest}</div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <EmptyPanel message="New website and CRM leads will appear here once the pipeline starts receiving enquiries." />
+            )}
           </CardContent>
         </Card>
 
@@ -167,24 +171,28 @@ export default async function DashboardPage() {
             <CardTitle className="text-white">Lead Status Summary</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="space-y-4">
-              {overview.statusSummary.map((item) => (
-                <div key={item.status} className="space-y-2">
-                  <div className="flex items-center justify-between text-sm text-zinc-300">
-                    <span>{LEAD_STATUS_LABELS[item.status as LeadStatus]}</span>
-                    <span>{numberFormatter.format(item.count)}</span>
+            {overview.statusSummary.length > 0 ? (
+              <div className="space-y-4">
+                {overview.statusSummary.map((item) => (
+                  <div key={item.status} className="space-y-2">
+                    <div className="flex items-center justify-between text-sm text-zinc-300">
+                      <span>{LEAD_STATUS_LABELS[item.status as LeadStatus]}</span>
+                      <span>{numberFormatter.format(item.count)}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-white/6">
+                      <div
+                        className="h-2 rounded-full bg-[linear-gradient(90deg,rgba(245,199,107,0.95),rgba(216,145,56,0.75))]"
+                        style={{
+                          width: `${overview.metrics.totalLeads > 0 ? (item.count / overview.metrics.totalLeads) * 100 : 0}%`,
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 rounded-full bg-white/6">
-                    <div
-                      className="h-2 rounded-full bg-[linear-gradient(90deg,rgba(245,199,107,0.95),rgba(216,145,56,0.75))]"
-                      style={{
-                        width: `${overview.metrics.totalLeads > 0 ? (item.count / overview.metrics.totalLeads) * 100 : 0}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyPanel message="Lead status analytics will populate after the first enquiries are stored." />
+            )}
           </CardContent>
         </Card>
 
@@ -193,22 +201,26 @@ export default async function DashboardPage() {
             <CardTitle className="text-white">Conversion Funnel Preview</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="space-y-4">
-              {overview.funnel.map((item, index) => (
-                <div
-                  key={item.label}
-                  className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4"
-                  style={{
-                    width: `${100 - index * 8}%`,
-                  }}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="text-sm font-medium text-white">{item.label}</div>
-                    <div className="text-sm text-zinc-400">{numberFormatter.format(item.value)}</div>
+            {overview.funnel.some((item) => item.value > 0) ? (
+              <div className="space-y-4">
+                {overview.funnel.map((item, index) => (
+                  <div
+                    key={item.label}
+                    className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4"
+                    style={{
+                      width: `${100 - index * 8}%`,
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-sm font-medium text-white">{item.label}</div>
+                      <div className="text-sm text-zinc-400">{numberFormatter.format(item.value)}</div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyPanel message="The conversion funnel will appear after the first lead records move through the CRM." />
+            )}
           </CardContent>
         </Card>
       </div>
@@ -224,5 +236,13 @@ function MetricCard({ label, value }: { label: string; value: string }) {
         <div className="mt-4 font-heading text-4xl text-white">{value}</div>
       </CardContent>
     </Card>
+  );
+}
+
+function EmptyPanel({ message }: { message: string }) {
+  return (
+    <div className="rounded-[1.5rem] border border-dashed border-white/10 bg-white/[0.02] p-6 text-sm leading-7 text-zinc-500">
+      {message}
+    </div>
   );
 }

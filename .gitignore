@@ -18,6 +18,7 @@
 /.next-*/
 /.next-build/
 /.next-prod/
+/.next-production-build/
 /.next-db-fix-build/
 /.next-crm-build*/
 /.next-site-build/

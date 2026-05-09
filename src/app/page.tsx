@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
+import { StructuredData } from "@/components/seo/structured-data";
 import { Button } from "@/components/ui/button";
 import { CtaBanner } from "@/components/website/cta-banner";
 import { FaqAccordion } from "@/components/website/faq-accordion";
@@ -25,10 +26,31 @@ import {
   whyChooseEros,
 } from "@/content/website";
 import { LeadCaptureForm } from "@/features/leads/components/lead-capture-form";
+import {
+  buildBreadcrumbSchema,
+  buildFaqSchema,
+  buildItemListSchema,
+} from "@/lib/structured-data";
 
 export default function HomePage() {
   return (
     <>
+      <StructuredData
+        data={[
+          buildBreadcrumbSchema([
+            { name: "Home", path: "/" },
+          ]),
+          buildFaqSchema(homeFaq),
+          buildItemListSchema(
+            "Eros Enterprises service categories",
+            serviceCategories.map((service) => ({
+              name: service.name,
+              path: service.href,
+              description: service.summary,
+            })),
+          ),
+        ]}
+      />
       <PageHero
         eyebrow="Premium electrical + decorative lighting"
         title="Electrical infrastructure with the poise of a luxury lighting brand."

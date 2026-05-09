@@ -1,3 +1,5 @@
+import "server-only";
+
 import {
   InvoiceStatus,
   Prisma,
@@ -176,26 +178,28 @@ function mapInvoiceLink<
 }
 
 export async function getBillingDashboardMetrics() {
-  const quotations = await prisma.quotation.findMany({
-    select: {
-      totalAmount: true,
-      status: true,
-      validUntil: true,
-    },
-  });
-  const invoices = await prisma.invoice.findMany({
-    select: {
-      totalAmount: true,
-      balanceAmount: true,
-      status: true,
-      dueDate: true,
-    },
-  });
-  const payments = await prisma.payment.findMany({
-    select: {
-      amount: true,
-    },
-  });
+  const [quotations, invoices, payments] = await prisma.$transaction([
+    prisma.quotation.findMany({
+      select: {
+        totalAmount: true,
+        status: true,
+        validUntil: true,
+      },
+    }),
+    prisma.invoice.findMany({
+      select: {
+        totalAmount: true,
+        balanceAmount: true,
+        status: true,
+        dueDate: true,
+      },
+    }),
+    prisma.payment.findMany({
+      select: {
+        amount: true,
+      },
+    }),
+  ]);
 
   const quotedValue = quotations.reduce((sum, quotation) => {
     const status = getDerivedQuotationStatus(quotation.status, quotation.validUntil);

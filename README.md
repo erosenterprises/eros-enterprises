@@ -49,5 +49,9 @@ npm run dev
 8. Run the verification build:
 
 ```powershell
-npm run build
+npm run verify
 ```
+
+## Production
+
+Production deployment notes, PM2 config, Nginx guidance, PostgreSQL setup, and backup/checklist instructions live in `docs/production-deployment.md`.

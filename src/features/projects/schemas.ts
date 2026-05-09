@@ -18,10 +18,6 @@ const optionalString = z.preprocess((value) => {
   return trimmed.length > 0 ? trimmed : undefined;
 }, z.string().optional());
 
-const optionalText = optionalString.transform((value) =>
-  typeof value === "string" ? sanitizeTextInput(value) : undefined,
-);
-
 const optionalMultilineText = optionalString.transform((value) =>
   typeof value === "string" ? sanitizeMultilineTextInput(value) : undefined,
 );
