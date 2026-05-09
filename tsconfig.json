@@ -38,7 +38,9 @@
     ".next-site-build/types/**/*.ts",
     ".next-site-build/dev/types/**/*.ts",
     ".next-site-build-prod/types/**/*.ts",
-    ".next-site-build-prod/dev/types/**/*.ts"
+    ".next-site-build-prod/dev/types/**/*.ts",
+    ".next-phase7-build/types/**/*.ts",
+    ".next-phase7-build/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

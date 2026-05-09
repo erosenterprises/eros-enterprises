@@ -57,6 +57,24 @@ export const INVOICE_STATUSES = [
   "CANCELLED",
 ] as const;
 
+export const PROJECT_STAGES = [
+  "PLANNED",
+  "MATERIAL_ORDERED",
+  "WORK_STARTED",
+  "IN_PROGRESS",
+  "ON_HOLD",
+  "COMPLETED",
+  "CLOSED",
+] as const;
+
+export const AMC_STATUSES = [
+  "ACTIVE",
+  "DUE_SOON",
+  "EXPIRED",
+  "RENEWED",
+  "CANCELLED",
+] as const;
+
 export const PAYMENT_METHODS = [
   "CASH",
   "UPI",
@@ -84,6 +102,16 @@ export const ACTIVITY_TYPES = [
   "INVOICE_UPDATED",
   "INVOICE_STATUS_CHANGED",
   "PAYMENT_RECORDED",
+  "PROJECT_CREATED",
+  "PROJECT_UPDATED",
+  "PROJECT_STAGE_CHANGED",
+  "PROJECT_MANAGER_ASSIGNED",
+  "PROJECT_ENGINEER_ASSIGNED",
+  "PROJECT_PROGRESS_UPDATED",
+  "AMC_PLAN_CREATED",
+  "AMC_PLAN_UPDATED",
+  "AMC_STATUS_CHANGED",
+  "AMC_RENEWAL_RECORDED",
   "WHATSAPP_MESSAGE_RECEIVED",
   "WHATSAPP_MESSAGE_SENT",
   "AUTOMATION_RULE_CREATED",
@@ -163,6 +191,30 @@ export const INVOICE_STATUS_LABELS: Record<
   CANCELLED: "Cancelled",
 };
 
+export const PROJECT_STAGE_LABELS: Record<
+  (typeof PROJECT_STAGES)[number],
+  string
+> = {
+  PLANNED: "Planned",
+  MATERIAL_ORDERED: "Material Ordered",
+  WORK_STARTED: "Work Started",
+  IN_PROGRESS: "In Progress",
+  ON_HOLD: "On Hold",
+  COMPLETED: "Completed",
+  CLOSED: "Closed",
+};
+
+export const AMC_STATUS_LABELS: Record<
+  (typeof AMC_STATUSES)[number],
+  string
+> = {
+  ACTIVE: "Active",
+  DUE_SOON: "Due Soon",
+  EXPIRED: "Expired",
+  RENEWED: "Renewed",
+  CANCELLED: "Cancelled",
+};
+
 export const PAYMENT_METHOD_LABELS: Record<
   (typeof PAYMENT_METHODS)[number],
   string
@@ -193,6 +245,16 @@ export const ACTIVITY_TYPE_LABELS: Record<(typeof ACTIVITY_TYPES)[number], strin
   INVOICE_UPDATED: "Invoice Updated",
   INVOICE_STATUS_CHANGED: "Invoice Status Updated",
   PAYMENT_RECORDED: "Payment Recorded",
+  PROJECT_CREATED: "Project Created",
+  PROJECT_UPDATED: "Project Updated",
+  PROJECT_STAGE_CHANGED: "Project Stage Updated",
+  PROJECT_MANAGER_ASSIGNED: "Project Manager Assigned",
+  PROJECT_ENGINEER_ASSIGNED: "Site Engineer Assigned",
+  PROJECT_PROGRESS_UPDATED: "Project Progress Updated",
+  AMC_PLAN_CREATED: "AMC Plan Created",
+  AMC_PLAN_UPDATED: "AMC Plan Updated",
+  AMC_STATUS_CHANGED: "AMC Status Updated",
+  AMC_RENEWAL_RECORDED: "AMC Renewal Recorded",
   WHATSAPP_MESSAGE_RECEIVED: "WhatsApp Message Received",
   WHATSAPP_MESSAGE_SENT: "WhatsApp Message Sent",
   AUTOMATION_RULE_CREATED: "Automation Rule Created",

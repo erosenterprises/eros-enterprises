@@ -4,6 +4,11 @@ import {
 } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
+import {
+  getDaysUntil,
+  getDerivedAmcStatus,
+  isProjectCompletedStage,
+} from "@/features/projects/utils";
 
 export async function getAssignableUsers() {
   const salesUsers = await prisma.user.findMany({
@@ -121,6 +126,33 @@ export async function getDashboardOverview() {
       status: true,
     },
   });
+  const projects = await prisma.project.findMany({
+    select: {
+      stage: true,
+      targetCompletionDate: true,
+    },
+  });
+  const amcPlans = await prisma.amcPlan.findMany({
+    orderBy: [{ renewalDate: "asc" }],
+    select: {
+      id: true,
+      amcNumber: true,
+      title: true,
+      status: true,
+      renewalDate: true,
+      endDate: true,
+      customer: {
+        select: {
+          legalName: true,
+        },
+      },
+      project: {
+        select: {
+          title: true,
+        },
+      },
+    },
+  });
 
   const statusSummaryMap = new Map<string, number>();
 
@@ -135,6 +167,37 @@ export async function getDashboardOverview() {
     { label: "Won", value: wonLeads },
   ];
 
+  let activeProjects = 0;
+  let completedProjects = 0;
+  let delayedOrOnHoldProjects = 0;
+
+  for (const project of projects) {
+    if (isProjectCompletedStage(project.stage)) {
+      completedProjects += 1;
+      continue;
+    }
+
+    if (project.stage === "ON_HOLD") {
+      delayedOrOnHoldProjects += 1;
+      continue;
+    }
+
+    activeProjects += 1;
+
+    if (project.targetCompletionDate && project.targetCompletionDate.getTime() < now.getTime()) {
+      delayedOrOnHoldProjects += 1;
+    }
+  }
+
+  const enrichedAmcPlans = amcPlans.map((plan) => ({
+    ...plan,
+    effectiveStatus: getDerivedAmcStatus(plan.status, plan.renewalDate, plan.endDate),
+    daysUntilRenewal: getDaysUntil(plan.renewalDate, now),
+  }));
+
+  const dueSoonAmcCount = enrichedAmcPlans.filter((plan) => plan.effectiveStatus === "DUE_SOON").length;
+  const expiredAmcCount = enrichedAmcPlans.filter((plan) => plan.effectiveStatus === "EXPIRED").length;
+
   return {
     metrics: {
       totalLeads,
@@ -145,9 +208,17 @@ export async function getDashboardOverview() {
       wonLeads,
       lostLeads,
       totalCustomers,
+      activeProjects,
+      completedProjects,
+      delayedOrOnHoldProjects,
+      dueSoonAmcCount,
+      expiredAmcCount,
     },
     recentLeads,
     upcomingSiteVisits,
+    upcomingRenewals: enrichedAmcPlans
+      .filter((plan) => plan.effectiveStatus !== "EXPIRED" && plan.effectiveStatus !== "CANCELLED")
+      .slice(0, 5),
     statusSummary: Array.from(statusSummaryMap.entries()).map(([status, count]) => ({
       status,
       count,

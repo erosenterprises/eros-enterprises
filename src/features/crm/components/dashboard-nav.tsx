@@ -6,8 +6,10 @@ const items = [
   { href: "/dashboard/customers", label: "Customers" },
   { href: "/dashboard/site-visits", label: "Site Visits" },
   { href: "/dashboard/quotations", label: "Quotations" },
+  { href: "/dashboard/projects", label: "Projects" },
   { href: "/dashboard/invoices", label: "Invoices" },
   { href: "/dashboard/payments", label: "Payments" },
+  { href: "/dashboard/amc", label: "AMC" },
   { href: "/dashboard/whatsapp", label: "WhatsApp" },
   { href: "/dashboard/automation", label: "Automation" },
 ];

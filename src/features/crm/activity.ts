@@ -18,6 +18,8 @@ type CreateActivityInput = {
   quotationId?: string | null;
   invoiceId?: string | null;
   paymentId?: string | null;
+  projectId?: string | null;
+  amcPlanId?: string | null;
   whatsappConversationId?: string | null;
   whatsappMessageId?: string | null;
   automationRuleId?: string | null;
@@ -43,6 +45,8 @@ export async function createActivityLog(
       quotationId: input.quotationId,
       invoiceId: input.invoiceId,
       paymentId: input.paymentId,
+      projectId: input.projectId,
+      amcPlanId: input.amcPlanId,
       whatsappConversationId: input.whatsappConversationId,
       whatsappMessageId: input.whatsappMessageId,
       automationRuleId: input.automationRuleId,

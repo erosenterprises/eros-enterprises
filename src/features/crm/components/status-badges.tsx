@@ -1,12 +1,14 @@
 import type {
   AutomationActionType,
   AutomationTriggerType,
+  AmcStatus,
   CustomerStatus,
   CustomerType,
   InvoiceStatus,
   LeadPriority,
   LeadStatus,
   PaymentMethod,
+  ProjectStage,
   QuotationStatus,
   SiteVisitStatus,
   WhatsAppMessageStatus,
@@ -14,12 +16,14 @@ import type {
 
 import { Badge } from "@/components/ui/badge";
 import {
+  AMC_STATUS_LABELS,
   CUSTOMER_STATUS_LABELS,
   CUSTOMER_TYPE_LABELS,
   INVOICE_STATUS_LABELS,
   LEAD_PRIORITY_LABELS,
   LEAD_STATUS_LABELS,
   PAYMENT_METHOD_LABELS,
+  PROJECT_STAGE_LABELS,
   QUOTATION_STATUS_LABELS,
   SITE_VISIT_STATUS_LABELS,
 } from "@/features/crm/constants";
@@ -114,6 +118,34 @@ export function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {
 
 export function PaymentMethodBadge({ method }: { method: PaymentMethod }) {
   return <Badge className="bg-white/8 text-zinc-200">{PAYMENT_METHOD_LABELS[method]}</Badge>;
+}
+
+export function ProjectStageBadge({ stage }: { stage: ProjectStage }) {
+  const className =
+    {
+      PLANNED: "bg-zinc-500/15 text-zinc-200",
+      MATERIAL_ORDERED: "bg-amber-500/15 text-amber-200",
+      WORK_STARTED: "bg-sky-500/15 text-sky-200",
+      IN_PROGRESS: "bg-indigo-500/15 text-indigo-200",
+      ON_HOLD: "bg-rose-500/15 text-rose-200",
+      COMPLETED: "bg-emerald-500/15 text-emerald-200",
+      CLOSED: "bg-zinc-700/40 text-zinc-300",
+    }[stage] ?? "bg-white/10 text-zinc-200";
+
+  return <Badge className={className}>{PROJECT_STAGE_LABELS[stage]}</Badge>;
+}
+
+export function AmcStatusBadge({ status }: { status: AmcStatus }) {
+  const className =
+    {
+      ACTIVE: "bg-emerald-500/15 text-emerald-200",
+      DUE_SOON: "bg-amber-500/15 text-amber-200",
+      EXPIRED: "bg-rose-500/15 text-rose-200",
+      RENEWED: "bg-sky-500/15 text-sky-200",
+      CANCELLED: "bg-zinc-700/40 text-zinc-300",
+    }[status] ?? "bg-white/10 text-zinc-200";
+
+  return <Badge className={className}>{AMC_STATUS_LABELS[status]}</Badge>;
 }
 
 export function WhatsAppMessageStatusBadge({ status }: { status: WhatsAppMessageStatus }) {

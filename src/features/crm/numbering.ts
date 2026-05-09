@@ -72,6 +72,28 @@ async function createUniqueNumber(prefix: string) {
         return candidate;
       }
     }
+
+    if (prefix === "ERPR") {
+      const existing = await prisma.project.findUnique({
+        where: { projectNumber: candidate },
+        select: { id: true },
+      });
+
+      if (!existing) {
+        return candidate;
+      }
+    }
+
+    if (prefix === "ERAMC") {
+      const existing = await prisma.amcPlan.findUnique({
+        where: { amcNumber: candidate },
+        select: { id: true },
+      });
+
+      if (!existing) {
+        return candidate;
+      }
+    }
   }
 
   throw new Error(`Could not generate a unique ${prefix} number.`);
@@ -99,4 +121,12 @@ export function createInvoiceNumber() {
 
 export function createPaymentNumber() {
   return createUniqueNumber("ERP");
+}
+
+export function createProjectNumber() {
+  return createUniqueNumber("ERPR");
+}
+
+export function createAmcNumber() {
+  return createUniqueNumber("ERAMC");
 }

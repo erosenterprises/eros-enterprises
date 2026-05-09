@@ -47,6 +47,8 @@ enum ActivityEntityType {
   QUOTATION
   INVOICE
   PAYMENT
+  PROJECT
+  AMC_PLAN
   WHATSAPP_CONVERSATION
   WHATSAPP_MESSAGE
   AUTOMATION_RULE
@@ -90,6 +92,16 @@ enum ActivityType {
   INVOICE_UPDATED
   INVOICE_STATUS_CHANGED
   PAYMENT_RECORDED
+  PROJECT_CREATED
+  PROJECT_UPDATED
+  PROJECT_STAGE_CHANGED
+  PROJECT_MANAGER_ASSIGNED
+  PROJECT_ENGINEER_ASSIGNED
+  PROJECT_PROGRESS_UPDATED
+  AMC_PLAN_CREATED
+  AMC_PLAN_UPDATED
+  AMC_STATUS_CHANGED
+  AMC_RENEWAL_RECORDED
   WHATSAPP_MESSAGE_RECEIVED
   WHATSAPP_MESSAGE_SENT
   AUTOMATION_RULE_CREATED
@@ -163,6 +175,24 @@ enum AutomationActionType {
   INTERNAL_NOTIFICATION
 }
 
+enum ProjectStage {
+  PLANNED
+  MATERIAL_ORDERED
+  WORK_STARTED
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CLOSED
+}
+
+enum AmcStatus {
+  ACTIVE
+  DUE_SOON
+  EXPIRED
+  RENEWED
+  CANCELLED
+}
+
 model User {
   id                 String        @id @default(cuid())
   email              String        @unique
@@ -175,6 +205,8 @@ model User {
   role               Role          @relation(fields: [roleId], references: [id], onDelete: Restrict)
   assignedLeads      Lead[]        @relation("LeadAssignee")
   assignedSiteVisits SiteVisit[]   @relation("SiteVisitEngineer")
+  managedProjects    Project[]     @relation("ProjectManager")
+  assignedProjects   Project[]     @relation("ProjectEngineer")
   whatsappMessagesSent WhatsAppMessage[]
   activities         ActivityLog[]
   createdAt          DateTime      @default(now())
@@ -247,6 +279,8 @@ model Customer {
   quotations         Quotation[]
   invoices           Invoice[]
   payments           Payment[]
+  projects           Project[]
+  amcPlans           AmcPlan[]
   whatsappConversations WhatsAppConversation[]
   whatsappMessages   WhatsAppMessage[]
   activities         ActivityLog[]
@@ -286,6 +320,7 @@ model Service {
   isActive    Boolean       @default(true)
   quotationItems QuotationItem[]
   invoiceItems InvoiceItem[]
+  amcPlans      AmcPlan[]
   activities  ActivityLog[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -312,6 +347,7 @@ model Quotation {
   acceptedAt     DateTime?
   rejectedAt     DateTime?
   expiredAt      DateTime?
+  project        Project?
   invoice        Invoice?
   items          QuotationItem[]
   activities     ActivityLog[]
@@ -427,6 +463,64 @@ model Payment {
   @@index([paidAt])
 }
 
+model Project {
+  id                 String        @id @default(cuid())
+  projectNumber      String        @unique
+  title              String
+  description        String?
+  stage              ProjectStage  @default(PLANNED)
+  progressPercent    Int           @default(0)
+  startDate          DateTime?
+  targetCompletionDate DateTime?
+  completedAt        DateTime?
+  customerId         String
+  customer           Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  quotationId        String?       @unique
+  quotation          Quotation?    @relation(fields: [quotationId], references: [id], onDelete: SetNull)
+  projectManagerId   String?
+  projectManager     User?         @relation("ProjectManager", fields: [projectManagerId], references: [id], onDelete: SetNull)
+  siteEngineerId     String?
+  siteEngineer       User?         @relation("ProjectEngineer", fields: [siteEngineerId], references: [id], onDelete: SetNull)
+  amcPlans           AmcPlan[]
+  activities         ActivityLog[]
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([customerId])
+  @@index([quotationId])
+  @@index([projectManagerId])
+  @@index([siteEngineerId])
+  @@index([stage, targetCompletionDate])
+}
+
+model AmcPlan {
+  id                 String      @id @default(cuid())
+  amcNumber          String      @unique
+  title              String
+  description        String?
+  status             AmcStatus   @default(ACTIVE)
+  startDate          DateTime
+  endDate            DateTime
+  renewalDate        DateTime
+  renewalReminderDays Int[]      @default([30, 15, 7])
+  lastRenewedAt      DateTime?
+  customerId         String
+  customer           Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  projectId          String?
+  project            Project?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  serviceId          String?
+  service            Service?    @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  activities         ActivityLog[]
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  @@index([customerId])
+  @@index([projectId])
+  @@index([serviceId])
+  @@index([status, renewalDate])
+  @@index([endDate])
+}
+
 model WhatsAppConversation {
   id                 String                     @id @default(cuid())
   phone              String                     @unique
@@ -527,6 +621,10 @@ model ActivityLog {
   invoice        Invoice?           @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   paymentId      String?
   payment        Payment?           @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  projectId      String?
+  project        Project?           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  amcPlanId      String?
+  amcPlan        AmcPlan?           @relation(fields: [amcPlanId], references: [id], onDelete: Cascade)
   whatsappConversationId String?
   whatsappConversation WhatsAppConversation? @relation(fields: [whatsappConversationId], references: [id], onDelete: Cascade)
   whatsappMessageId String?
@@ -545,6 +643,8 @@ model ActivityLog {
   @@index([quotationId])
   @@index([invoiceId])
   @@index([paymentId])
+  @@index([projectId])
+  @@index([amcPlanId])
   @@index([whatsappConversationId])
   @@index([whatsappMessageId])
   @@index([automationRuleId])

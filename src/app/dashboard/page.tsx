@@ -1,8 +1,8 @@
 import Link from "next/link";
-import type { LeadStatus } from "@prisma/client";
+import type { AmcStatus, LeadStatus } from "@prisma/client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LeadPriorityBadge, LeadStatusBadge, SiteVisitStatusBadge } from "@/features/crm/components/status-badges";
+import { AmcStatusBadge, LeadPriorityBadge, LeadStatusBadge, SiteVisitStatusBadge } from "@/features/crm/components/status-badges";
 import { getBillingDashboardMetrics } from "@/features/billing/repository";
 import { getDashboardOverview } from "@/features/crm/repository";
 import {
@@ -12,6 +12,7 @@ import {
   dateTimeFormatter,
   formatCurrency,
   numberFormatter,
+  shortDateFormatter,
 } from "@/features/crm/utils";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +44,11 @@ export default async function DashboardPage() {
         <MetricCard label="Won Leads" value={numberFormatter.format(overview.metrics.wonLeads)} />
         <MetricCard label="Lost Leads" value={numberFormatter.format(overview.metrics.lostLeads)} />
         <MetricCard label="Total Customers" value={numberFormatter.format(overview.metrics.totalCustomers)} />
+        <MetricCard label="Active Projects" value={numberFormatter.format(overview.metrics.activeProjects)} />
+        <MetricCard label="Completed Projects" value={numberFormatter.format(overview.metrics.completedProjects)} />
+        <MetricCard label="Delayed / On Hold" value={numberFormatter.format(overview.metrics.delayedOrOnHoldProjects)} />
+        <MetricCard label="AMC Due Soon" value={numberFormatter.format(overview.metrics.dueSoonAmcCount)} />
+        <MetricCard label="Expired AMC" value={numberFormatter.format(overview.metrics.expiredAmcCount)} />
         <MetricCard label="Quoted Value" value={formatCurrency(billingMetrics.quotedValue)} />
         <MetricCard label="Invoiced Value" value={formatCurrency(billingMetrics.invoicedValue)} />
         <MetricCard label="Collected Amount" value={formatCurrency(billingMetrics.collectedAmount)} />
@@ -121,6 +127,41 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
+        <Card className="border border-white/10 bg-[#101113]/92 py-0 shadow-none">
+          <CardHeader className="border-b border-white/10 py-6">
+            <CardTitle className="text-white">Upcoming AMC Renewals</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {overview.upcomingRenewals.length > 0 ? (
+                overview.upcomingRenewals.map((plan) => (
+                  <Link
+                    key={plan.id}
+                    href={`/dashboard/amc/${plan.id}`}
+                    className="block rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4 transition hover:border-white/15"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="text-xs uppercase tracking-[0.18em] text-amber-200/90">
+                        {plan.amcNumber}
+                      </div>
+                      <AmcStatusBadge status={plan.effectiveStatus as AmcStatus} />
+                    </div>
+                    <div className="mt-3 text-sm font-medium text-white">{plan.title}</div>
+                    <div className="mt-1 text-sm text-zinc-400">{plan.customer.legalName}</div>
+                    <div className="mt-2 text-xs uppercase tracking-[0.16em] text-zinc-500">
+                      Renewal {shortDateFormatter.format(plan.renewalDate)} | {plan.daysUntilRenewal >= 0 ? `${plan.daysUntilRenewal} days left` : "Overdue"}
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <div className="rounded-[1.5rem] border border-dashed border-white/10 bg-white/[0.02] p-6 text-sm text-zinc-500">
+                  No renewal reminders are due right now.
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="border border-white/10 bg-[#101113]/92 py-0 shadow-none">
           <CardHeader className="border-b border-white/10 py-6">
             <CardTitle className="text-white">Lead Status Summary</CardTitle>
