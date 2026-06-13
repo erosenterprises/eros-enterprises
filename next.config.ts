@@ -20,7 +20,6 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   compress: true,
-  deploymentId: process.env.DEPLOYMENT_VERSION,
   async headers() {
     return [
       {
