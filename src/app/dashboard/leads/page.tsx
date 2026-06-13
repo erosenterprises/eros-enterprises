@@ -1,14 +1,11 @@
 import Link from "next/link";
+import { SlidersHorizontal } from "lucide-react";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { LeadTable } from "@/features/leads/components/lead-table";
-import {
-  LEAD_PRIORITIES,
-  LEAD_SOURCES,
-  LEAD_STATUSES,
-} from "@/features/crm/constants";
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import leadRepository from "@/features/leads/repository";
-import { numberFormatter } from "@/features/crm/utils";
+import { getDashboardOverview } from "@/features/crm/repository";
+import { getInitials } from "@/features/crm/utils";
+import { dateTimeFormatter } from "@/features/crm/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -16,131 +13,251 @@ function getStringParam(value: string | string[] | undefined) {
   return typeof value === "string" ? value : undefined;
 }
 
+function timeAgo(date: Date): string {
+  const diffMs = Date.now() - date.getTime();
+  const minutes = Math.floor(diffMs / 60_000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+function getLeadStatusStyle(status: string): { bg: string; color: string } {
+  switch (status) {
+    case "NEW": return { bg: "rgba(245,166,35,0.15)", color: "#F5A623" };
+    case "CONTACTED": return { bg: "rgba(21,101,192,0.15)", color: "#64B5F6" };
+    case "QUALIFIED": return { bg: "rgba(156,39,176,0.15)", color: "#CE93D8" };
+    case "SITE_VISIT_SCHEDULED": return { bg: "rgba(0,150,136,0.15)", color: "#4DB6AC" };
+    case "QUOTATION_SENT": return { bg: "rgba(33,150,243,0.15)", color: "#90CAF9" };
+    case "WON": return { bg: "rgba(76,175,80,0.15)", color: "#4CAF50" };
+    case "LOST": return { bg: "rgba(239,83,80,0.15)", color: "#EF5350" };
+    default: return { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.5)" };
+  }
+}
+
+function getLeadStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    NEW: "New",
+    CONTACTED: "Contacted",
+    QUALIFIED: "Qualified",
+    SITE_VISIT_SCHEDULED: "Site Visit",
+    QUOTATION_SENT: "Quoted",
+    WON: "Won",
+    LOST: "Lost",
+  };
+  return labels[status] ?? status;
+}
+
+const PILL_FILTERS = [
+  { label: "All", value: "" },
+  { label: "New", value: "NEW" },
+  { label: "Contacted", value: "CONTACTED" },
+  { label: "Site Visit", value: "SITE_VISIT_SCHEDULED" },
+  { label: "Won", value: "WON" },
+] as const;
+
 export default async function DashboardLeadsPage(
   props: PageProps<"/dashboard/leads">,
 ) {
   const searchParams = await props.searchParams;
-  const filters = {
-    query: getStringParam(searchParams.query),
-    status: getStringParam(searchParams.status),
-    service: getStringParam(searchParams.service),
-    source: getStringParam(searchParams.source),
-    priority: getStringParam(searchParams.priority),
-    assignee: getStringParam(searchParams.assignee),
-  };
+  const status = getStringParam(searchParams.status);
 
-  const [leads, filterOptions] = await Promise.all([
-    leadRepository.getLeadsForDashboard(filters),
-    leadRepository.getLeadFilterOptions(),
+  const [leads, overview] = await Promise.all([
+    leadRepository.getLeadsForDashboard({ status }),
+    getDashboardOverview(),
   ]);
-  const newLeadsCount = leads.filter((lead) => lead.status === "NEW").length;
-  const hotLeadsCount = leads.filter(
-    (lead) => lead.priority === "HIGH" || lead.priority === "URGENT",
-  ).length;
 
-  return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div className="text-xs uppercase tracking-[0.22em] text-amber-200/80">
-            CRM
-          </div>
-          <h1 className="mt-3 font-heading text-4xl text-white">Lead Pipeline</h1>
-          <p className="mt-2 max-w-2xl text-zinc-400">
-            Website enquiries, quote requests, site visits, and service CTAs land here with source attribution and activity history.
-          </p>
-        </div>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <MetricCard label="Total leads" value={numberFormatter.format(leads.length)} />
-        <MetricCard label="New enquiries" value={numberFormatter.format(newLeadsCount)} />
-        <MetricCard label="High-priority" value={numberFormatter.format(hotLeadsCount)} />
-      </div>
-
-      <form className="grid gap-3 rounded-[2rem] border border-white/10 bg-black/20 p-4 md:grid-cols-2 xl:grid-cols-6">
-        <input
-          name="query"
-          defaultValue={filters.query}
-          placeholder="Search name, phone, lead number"
-          className="h-10 rounded-3xl border border-white/10 bg-white/[0.04] px-3 text-sm text-white placeholder:text-zinc-500 xl:col-span-2"
-        />
-        <select name="status" defaultValue={filters.status ?? ""} className="h-10 rounded-3xl border border-white/10 bg-white/[0.04] px-3 text-sm text-white">
-          <option value="" className="bg-[#101113]">All statuses</option>
-          {LEAD_STATUSES.map((status) => (
-            <option key={status} value={status} className="bg-[#101113]">
-              {status.replaceAll("_", " ")}
-            </option>
-          ))}
-        </select>
-        <select name="service" defaultValue={filters.service ?? ""} className="h-10 rounded-3xl border border-white/10 bg-white/[0.04] px-3 text-sm text-white">
-          <option value="" className="bg-[#101113]">All services</option>
-          {filterOptions.services.map((service) => (
-            <option key={service} value={service} className="bg-[#101113]">
-              {service}
-            </option>
-          ))}
-        </select>
-        <select name="source" defaultValue={filters.source ?? ""} className="h-10 rounded-3xl border border-white/10 bg-white/[0.04] px-3 text-sm text-white">
-          <option value="" className="bg-[#101113]">All sources</option>
-          {LEAD_SOURCES.map((source) => (
-            <option key={source} value={source} className="bg-[#101113]">
-              {source.replaceAll("_", " ")}
-            </option>
-          ))}
-        </select>
-        <select name="priority" defaultValue={filters.priority ?? ""} className="h-10 rounded-3xl border border-white/10 bg-white/[0.04] px-3 text-sm text-white">
-          <option value="" className="bg-[#101113]">All priorities</option>
-          {LEAD_PRIORITIES.map((priority) => (
-            <option key={priority} value={priority} className="bg-[#101113]">
-              {priority}
-            </option>
-          ))}
-        </select>
-        <select name="assignee" defaultValue={filters.assignee ?? ""} className="h-10 rounded-3xl border border-white/10 bg-white/[0.04] px-3 text-sm text-white">
-          <option value="" className="bg-[#101113]">All assignees</option>
-          {filterOptions.users.map((user) => (
-            <option key={user.id} value={user.id} className="bg-[#101113]">
-              {[user.firstName, user.lastName].filter(Boolean).join(" ")}
-            </option>
-          ))}
-        </select>
-        <div className="flex gap-2 xl:col-span-6">
-          <button
-            type="submit"
-            className="rounded-3xl bg-[linear-gradient(135deg,rgba(245,199,107,0.96),rgba(216,145,56,0.88))] px-4 py-2 text-sm font-medium text-black"
-          >
-            Apply Filters
-          </button>
-          <Link
-            href="/dashboard/leads"
-            className="rounded-3xl border border-white/10 px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/[0.05] hover:text-white"
-          >
-            Reset
-          </Link>
-        </div>
-      </form>
-
-      {leads.length > 0 ? (
-        <LeadTable leads={leads} />
-      ) : (
-        <Card className="border border-white/10 bg-[#101113]/92 py-0 shadow-none">
-          <CardContent className="p-10 text-center text-zinc-400">
-            No leads yet. Public website submissions will start appearing here once they are received.
-          </CardContent>
-        </Card>
-      )}
-    </div>
+  const filterIcon = (
+    <Link
+      href="/dashboard/leads"
+      className="flex h-8 w-8 items-center justify-center rounded-full"
+      style={{ background: "rgba(255,255,255,0.06)" }}
+      aria-label="Clear filters"
+    >
+      <SlidersHorizontal size={15} color="rgba(255,255,255,0.65)" />
+    </Link>
   );
-}
 
-function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <Card className="border border-white/10 bg-[#101113]/92 py-0 shadow-none">
-      <CardContent className="p-6">
-        <div className="text-xs uppercase tracking-[0.2em] text-zinc-500">{label}</div>
-        <div className="mt-4 font-heading text-4xl text-white">{value}</div>
-      </CardContent>
-    </Card>
+    <DashboardShell
+      title="Lead pipeline"
+      subtitle={`${leads.length} lead${leads.length !== 1 ? "s" : ""}`}
+      actions={filterIcon}
+    >
+      <div className="space-y-5 px-4 py-4">
+
+        {/* Horizontal pill filter tabs */}
+        <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+          {PILL_FILTERS.map((pill) => {
+            const active = (pill.value === "" && !status) || pill.value === status;
+            const href = pill.value
+              ? `/dashboard/leads?status=${pill.value}`
+              : "/dashboard/leads";
+            return (
+              <Link
+                key={pill.value}
+                href={href}
+                className="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
+                style={{
+                  fontSize: "12px",
+                  fontWeight: active ? 600 : 400,
+                  background: active ? "#F5A623" : "rgba(255,255,255,0.07)",
+                  color: active ? "#050A14" : "rgba(255,255,255,0.55)",
+                  border: active ? "none" : "1px solid rgba(255,255,255,0.08)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {pill.label}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Lead list */}
+        {leads.length > 0 ? (
+          <div className="space-y-2">
+            {leads.map((lead) => {
+              const statusStyle = getLeadStatusStyle(lead.status);
+              const isHot = lead.priority === "HIGH" || lead.priority === "URGENT";
+              const initials = getInitials(lead.name);
+
+              return (
+                <Link
+                  key={lead.id}
+                  href={`/dashboard/leads/${lead.id}`}
+                  className="flex items-center gap-3 rounded-[10px] px-3 py-3 transition-opacity active:opacity-70"
+                  style={{
+                    background: "#0F1F3D",
+                    border: "0.5px solid rgba(255,255,255,0.07)",
+                    borderLeft: `2.5px solid ${isHot ? "#EF5350" : "#1565C0"}`,
+                  }}
+                >
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                    style={{ background: "rgba(21,101,192,0.25)", color: "#90CAF9" }}
+                  >
+                    {initials}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div
+                      className="truncate font-medium"
+                      style={{ fontSize: "13px", color: "#FFFFFF" }}
+                    >
+                      {lead.name}
+                    </div>
+                    <div
+                      className="truncate"
+                      style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", marginTop: "2px" }}
+                    >
+                      {lead.serviceInterest}
+                    </div>
+                    <div
+                      style={{ fontSize: "10px", color: "rgba(255,255,255,0.25)", marginTop: "1px" }}
+                    >
+                      {timeAgo(new Date(lead.createdAt))}
+                    </div>
+                  </div>
+                  <div
+                    className="shrink-0 rounded-full px-2 py-1 text-center"
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 600,
+                      background: statusStyle.bg,
+                      color: statusStyle.color,
+                    }}
+                  >
+                    {getLeadStatusLabel(lead.status)}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <div
+            className="rounded-[10px] p-8 text-center"
+            style={{
+              border: "1px dashed rgba(255,255,255,0.1)",
+              background: "rgba(255,255,255,0.02)",
+            }}
+          >
+            <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.3)" }}>
+              {status ? `No ${getLeadStatusLabel(status).toLowerCase()} leads` : "No leads yet"}
+            </div>
+            <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.2)", marginTop: "4px" }}>
+              New enquiries will appear here automatically
+            </div>
+          </div>
+        )}
+
+        {/* Upcoming site visits sub-section */}
+        {overview.upcomingSiteVisits.length > 0 && (
+          <div>
+            <div
+              className="mb-3 uppercase tracking-[0.06em]"
+              style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)" }}
+            >
+              Upcoming site visits
+            </div>
+            <div className="space-y-2">
+              {overview.upcomingSiteVisits.map((visit) => (
+                <Link
+                  key={visit.id}
+                  href={`/dashboard/site-visits/${visit.id}`}
+                  className="flex items-center gap-3 rounded-[10px] px-3 py-3 transition-opacity active:opacity-70"
+                  style={{
+                    background: "#0F1F3D",
+                    border: "0.5px solid rgba(255,255,255,0.07)",
+                    borderLeft: "2.5px solid #4DB6AC",
+                  }}
+                >
+                  <div
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                    style={{ background: "rgba(0,150,136,0.2)", color: "#4DB6AC" }}
+                  >
+                    <span style={{ fontSize: "10px", fontWeight: 700 }}>SV</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div
+                      className="truncate font-medium"
+                      style={{ fontSize: "13px", color: "#FFFFFF" }}
+                    >
+                      {visit.customer?.legalName ?? visit.lead?.name ?? "Unlinked visit"}
+                    </div>
+                    <div
+                      className="truncate"
+                      style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", marginTop: "2px" }}
+                    >
+                      {dateTimeFormatter.format(visit.scheduledAt)}
+                    </div>
+                    {visit.address && (
+                      <div
+                        className="truncate"
+                        style={{ fontSize: "10px", color: "rgba(255,255,255,0.25)", marginTop: "1px" }}
+                      >
+                        {visit.address}
+                      </div>
+                    )}
+                  </div>
+                  <div
+                    className="shrink-0 rounded-full px-2 py-1"
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 600,
+                      background: "rgba(0,150,136,0.15)",
+                      color: "#4DB6AC",
+                    }}
+                  >
+                    {visit.status.charAt(0) + visit.status.slice(1).toLowerCase()}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+      </div>
+    </DashboardShell>
   );
 }

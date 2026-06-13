@@ -1,156 +1,306 @@
 import Link from "next/link";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { QuotationBuilderForm } from "@/features/billing/components/quotation-builder-form";
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import {
   getBillingDashboardMetrics,
-  getBillingOptions,
+  getInvoices,
+  getPayments,
   getQuotations,
 } from "@/features/billing/repository";
-import {
-  QUOTATION_STATUSES,
-  QUOTATION_STATUS_LABELS,
-} from "@/features/crm/constants";
-import { QuotationStatusBadge } from "@/features/crm/components/status-badges";
-import { formatCurrency, numberFormatter, shortDateFormatter } from "@/features/crm/utils";
+import { formatCurrency, shortDateFormatter } from "@/features/crm/utils";
 
 export const dynamic = "force-dynamic";
 
-function getStringParam(value: string | string[] | undefined) {
-  return typeof value === "string" ? value : undefined;
+function getQuotationStatusStyle(status: string): { bg: string; color: string } {
+  switch (status) {
+    case "DRAFT": return { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.45)" };
+    case "SENT": return { bg: "rgba(21,101,192,0.15)", color: "#64B5F6" };
+    case "VIEWED": return { bg: "rgba(21,101,192,0.12)", color: "#90CAF9" };
+    case "ACCEPTED": return { bg: "rgba(76,175,80,0.15)", color: "#4CAF50" };
+    case "REJECTED": return { bg: "rgba(239,83,80,0.15)", color: "#EF5350" };
+    case "EXPIRED": return { bg: "rgba(255,152,0,0.15)", color: "#FFA726" };
+    default: return { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.45)" };
+  }
 }
 
-export default async function DashboardQuotationsPage(
-  props: PageProps<"/dashboard/quotations">,
-) {
-  const searchParams = await props.searchParams;
-  const filters = {
-    query: getStringParam(searchParams.query),
-    status: getStringParam(searchParams.status),
-  };
+function getInvoiceStatusStyle(status: string): { bg: string; color: string } {
+  switch (status) {
+    case "DRAFT": return { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.45)" };
+    case "SENT": return { bg: "rgba(21,101,192,0.15)", color: "#64B5F6" };
+    case "PARTIALLY_PAID": return { bg: "rgba(156,39,176,0.15)", color: "#CE93D8" };
+    case "PAID": return { bg: "rgba(76,175,80,0.15)", color: "#4CAF50" };
+    case "OVERDUE": return { bg: "rgba(239,83,80,0.15)", color: "#EF5350" };
+    case "CANCELLED": return { bg: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.3)" };
+    default: return { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.45)" };
+  }
+}
 
-  const [quotations, options, metrics] = await Promise.all([
-    getQuotations(filters),
-    getBillingOptions(),
+function statusLabel(status: string): string {
+  const map: Record<string, string> = {
+    DRAFT: "Draft", SENT: "Sent", VIEWED: "Viewed", ACCEPTED: "Accepted",
+    REJECTED: "Rejected", EXPIRED: "Expired",
+    PARTIALLY_PAID: "Part paid", PAID: "Paid", OVERDUE: "Overdue", CANCELLED: "Cancelled",
+  };
+  return map[status] ?? status;
+}
+
+export default async function DashboardBillingPage() {
+  const [metrics, quotations, invoices, payments] = await Promise.all([
     getBillingDashboardMetrics(),
+    getQuotations({}),
+    getInvoices({}),
+    getPayments(),
   ]);
 
+  const overdueCount = invoices.filter((inv) => inv.effectiveStatus === "OVERDUE").length;
+  const recentQuotations = quotations.slice(0, 5);
+  const recentInvoices = invoices.slice(0, 5);
+
   return (
-    <div className="space-y-8">
-      <div>
-        <div className="text-xs uppercase tracking-[0.22em] text-amber-200/80">Sales Billing</div>
-        <h1 className="mt-3 font-heading text-4xl text-white">Quotations</h1>
-        <p className="mt-2 max-w-3xl text-zinc-400">
-          Build itemized commercial quotations, track customer responses, and hand accepted scopes into invoicing.
-        </p>
-      </div>
+    <DashboardShell title="Billing">
+      <div className="space-y-5 px-4 py-4">
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <MetricCard label="Quoted Value" value={formatCurrency(metrics.quotedValue)} />
-        <MetricCard label="Total Quotations" value={numberFormatter.format(quotations.length)} />
-        <MetricCard label="Accepted" value={numberFormatter.format(quotations.filter((item) => item.effectiveStatus === "ACCEPTED").length)} />
-        <MetricCard label="Awaiting Reply" value={numberFormatter.format(quotations.filter((item) => item.effectiveStatus === "SENT" || item.effectiveStatus === "VIEWED").length)} />
-      </div>
-
-      <Card className="border border-white/10 bg-[#101113]/92 py-0 shadow-none">
-        <CardHeader className="border-b border-white/10 py-6">
-          <CardTitle className="text-white">New Quotation</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <QuotationBuilderForm
-            mode="create"
-            leads={options.leads}
-            customers={options.customers}
-            services={options.services}
-          />
-        </CardContent>
-      </Card>
-
-      <form className="grid gap-3 rounded-[2rem] border border-white/10 bg-black/20 p-4 md:grid-cols-2 xl:grid-cols-4">
-        <input
-          name="query"
-          defaultValue={filters.query}
-          placeholder="Search number, title, lead, customer"
-          className="h-10 rounded-3xl border border-white/10 bg-white/[0.04] px-3 text-sm text-white placeholder:text-zinc-500 xl:col-span-2"
-        />
-        <select name="status" defaultValue={filters.status ?? ""} className="h-10 rounded-3xl border border-white/10 bg-white/[0.04] px-3 text-sm text-white">
-          <option value="" className="bg-[#101113]">All statuses</option>
-          {QUOTATION_STATUSES.map((status) => (
-            <option key={status} value={status} className="bg-[#101113]">
-              {QUOTATION_STATUS_LABELS[status]}
-            </option>
-          ))}
-        </select>
-        <div className="flex gap-2 xl:col-span-1">
-          <button
-            type="submit"
-            className="rounded-3xl bg-[linear-gradient(135deg,rgba(245,199,107,0.96),rgba(216,145,56,0.88))] px-4 py-2 text-sm font-medium text-black"
-          >
-            Apply Filters
-          </button>
-          <Link
-            href="/dashboard/quotations"
-            className="rounded-3xl border border-white/10 px-4 py-2 text-sm text-zinc-300 transition hover:bg-white/[0.05] hover:text-white"
-          >
-            Reset
-          </Link>
-        </div>
-      </form>
-
-      <div className="space-y-4">
-        {quotations.length > 0 ? (
-          quotations.map((quotation) => (
-            <Link
-              key={quotation.id}
-              href={`/dashboard/quotations/${quotation.id}`}
-              className="block rounded-[1.75rem] border border-white/10 bg-[#101113]/92 p-5 transition hover:border-white/20"
+        {/* KPI row — 3 cols */}
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { label: "Quoted", value: formatCurrency(metrics.quotedValue) },
+            { label: "Collected", value: formatCurrency(metrics.collectedAmount) },
+            { label: "Overdue", value: overdueCount.toString(), accent: overdueCount > 0 },
+          ].map((kpi) => (
+            <div
+              key={kpi.label}
+              className="rounded-[10px] p-3"
+              style={{
+                background: "#0F1F3D",
+                border: "0.5px solid rgba(255,255,255,0.07)",
+              }}
             >
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <div className="text-xs uppercase tracking-[0.18em] text-amber-200/90">
-                    {quotation.quotationNumber}
-                  </div>
-                  <div className="mt-2 text-lg font-medium text-white">
-                    {quotation.title || "Commercial Quotation"}
-                  </div>
-                  <div className="mt-2 text-sm text-zinc-400">
-                    {quotation.customer?.legalName ?? quotation.lead?.name ?? "Unlinked quotation"}
-                  </div>
-                </div>
-                <QuotationStatusBadge status={quotation.effectiveStatus} />
+              <div
+                style={{
+                  fontSize: "16px",
+                  fontWeight: 800,
+                  color: kpi.accent ? "#EF5350" : "#F5A623",
+                  lineHeight: 1.2,
+                  wordBreak: "break-all",
+                }}
+              >
+                {kpi.value}
               </div>
-              <div className="mt-4 grid gap-3 text-sm text-zinc-400 md:grid-cols-4">
-                <div>Issued: {shortDateFormatter.format(quotation.issueDate)}</div>
-                <div>Valid Until: {quotation.validUntil ? shortDateFormatter.format(quotation.validUntil) : "Not set"}</div>
-                <div>Items: {quotation._count.items}</div>
-                <div>Total: {formatCurrency(quotation.totalAmount)}</div>
+              <div
+                className="mt-1 uppercase tracking-[0.04em]"
+                style={{ fontSize: "9px", color: "rgba(255,255,255,0.35)" }}
+              >
+                {kpi.label}
               </div>
-              {quotation.invoice ? (
-                <div className="mt-3 text-xs uppercase tracking-[0.16em] text-zinc-500">
-                  Invoice linked: {quotation.invoice.invoiceNumber}
-                </div>
-              ) : null}
-            </Link>
-          ))
-        ) : (
-          <Card className="border border-white/10 bg-[#101113]/92 py-0 shadow-none">
-            <CardContent className="p-10 text-center text-zinc-400">
-              No quotations match the current filters yet.
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </div>
-  );
-}
+            </div>
+          ))}
+        </div>
 
-function MetricCard({ label, value }: { label: string; value: string }) {
-  return (
-    <Card className="border border-white/10 bg-[#101113]/92 py-0 shadow-none">
-      <CardContent className="p-6">
-        <div className="text-xs uppercase tracking-[0.2em] text-zinc-500">{label}</div>
-        <div className="mt-4 font-heading text-3xl text-white">{value}</div>
-      </CardContent>
-    </Card>
+        {/* Count pills */}
+        <div className="flex gap-2">
+          {[
+            { label: "Quotations", count: quotations.length, href: "/dashboard/quotations" },
+            { label: "Invoices", count: invoices.length, href: "/dashboard/invoices" },
+            { label: "Payments", count: payments.length, href: "/dashboard/payments" },
+          ].map((pill) => (
+            <Link
+              key={pill.label}
+              href={pill.href}
+              className="flex flex-1 flex-col items-center rounded-[10px] py-2.5"
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "0.5px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <span style={{ fontSize: "18px", fontWeight: 700, color: "#FFFFFF" }}>
+                {pill.count}
+              </span>
+              <span
+                style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", marginTop: "2px" }}
+              >
+                {pill.label}
+              </span>
+            </Link>
+          ))}
+        </div>
+
+        {/* Recent quotations */}
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <div
+              className="uppercase tracking-[0.06em]"
+              style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)" }}
+            >
+              Recent quotations
+            </div>
+            <Link href="/dashboard/quotations" style={{ fontSize: "11px", color: "#F5A623" }}>
+              See all
+            </Link>
+          </div>
+
+          {recentQuotations.length > 0 ? (
+            <div className="space-y-2">
+              {recentQuotations.map((q) => {
+                const style = getQuotationStatusStyle(q.effectiveStatus);
+                return (
+                  <Link
+                    key={q.id}
+                    href={`/dashboard/quotations/${q.id}`}
+                    className="flex items-center gap-3 rounded-[10px] px-3 py-3 transition-opacity active:opacity-70"
+                    style={{
+                      background: "#0F1F3D",
+                      border: "0.5px solid rgba(255,255,255,0.07)",
+                    }}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span
+                          style={{ fontSize: "10px", color: "#F5A623", fontWeight: 600 }}
+                        >
+                          {q.quotationNumber}
+                        </span>
+                        <div
+                          className="rounded-full px-2 py-0.5"
+                          style={{
+                            fontSize: "9px",
+                            fontWeight: 600,
+                            background: style.bg,
+                            color: style.color,
+                          }}
+                        >
+                          {statusLabel(q.effectiveStatus)}
+                        </div>
+                      </div>
+                      <div
+                        className="mt-0.5 truncate"
+                        style={{ fontSize: "13px", fontWeight: 500, color: "#FFFFFF" }}
+                      >
+                        {q.title || (q.customer?.legalName ?? q.lead?.name ?? "Quotation")}
+                      </div>
+                      <div
+                        style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", marginTop: "2px" }}
+                      >
+                        {shortDateFormatter.format(q.issueDate)}
+                      </div>
+                    </div>
+                    <div
+                      style={{ fontSize: "13px", fontWeight: 700, color: "#F5A623", flexShrink: 0 }}
+                    >
+                      {formatCurrency(q.totalAmount)}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div
+              className="rounded-[10px] p-6 text-center"
+              style={{
+                border: "1px dashed rgba(255,255,255,0.1)",
+                background: "rgba(255,255,255,0.02)",
+              }}
+            >
+              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.3)" }}>
+                No quotations yet
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Recent invoices */}
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <div
+              className="uppercase tracking-[0.06em]"
+              style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)" }}
+            >
+              Recent invoices
+            </div>
+            <Link href="/dashboard/invoices" style={{ fontSize: "11px", color: "#F5A623" }}>
+              See all
+            </Link>
+          </div>
+
+          {recentInvoices.length > 0 ? (
+            <div className="space-y-2">
+              {recentInvoices.map((inv) => {
+                const style = getInvoiceStatusStyle(inv.effectiveStatus);
+                return (
+                  <Link
+                    key={inv.id}
+                    href={`/dashboard/invoices/${inv.id}`}
+                    className="flex items-center gap-3 rounded-[10px] px-3 py-3 transition-opacity active:opacity-70"
+                    style={{
+                      background: "#0F1F3D",
+                      border: "0.5px solid rgba(255,255,255,0.07)",
+                      borderLeft: inv.effectiveStatus === "OVERDUE"
+                        ? "2.5px solid #EF5350"
+                        : "0.5px solid rgba(255,255,255,0.07)",
+                    }}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span
+                          style={{ fontSize: "10px", color: "#90CAF9", fontWeight: 600 }}
+                        >
+                          {inv.invoiceNumber}
+                        </span>
+                        <div
+                          className="rounded-full px-2 py-0.5"
+                          style={{
+                            fontSize: "9px",
+                            fontWeight: 600,
+                            background: style.bg,
+                            color: style.color,
+                          }}
+                        >
+                          {statusLabel(inv.effectiveStatus)}
+                        </div>
+                      </div>
+                      <div
+                        className="mt-0.5 truncate"
+                        style={{ fontSize: "13px", fontWeight: 500, color: "#FFFFFF" }}
+                      >
+                        {inv.customer?.legalName ?? inv.lead?.name ?? "Invoice"}
+                      </div>
+                      <div
+                        style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", marginTop: "2px" }}
+                      >
+                        {inv.dueDate
+                          ? `Due ${shortDateFormatter.format(inv.dueDate)}`
+                          : shortDateFormatter.format(inv.issueDate)}
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div style={{ fontSize: "13px", fontWeight: 700, color: "#FFFFFF" }}>
+                        {formatCurrency(inv.totalAmount)}
+                      </div>
+                      {inv.balanceAmount > 0 && (
+                        <div style={{ fontSize: "10px", color: "#EF5350", marginTop: "1px" }}>
+                          {formatCurrency(inv.balanceAmount)} due
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div
+              className="rounded-[10px] p-6 text-center"
+              style={{
+                border: "1px dashed rgba(255,255,255,0.1)",
+                background: "rgba(255,255,255,0.02)",
+              }}
+            >
+              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.3)" }}>
+                No invoices yet
+              </div>
+            </div>
+          )}
+        </div>
+
+      </div>
+    </DashboardShell>
   );
 }

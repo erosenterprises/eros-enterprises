@@ -92,9 +92,28 @@
   --eros-royal: #0047b3;
   --eros-glow: #00a6ff;
   --eros-amber: #f4a300;
-  --eros-gold: #ffcc33;
   --eros-night: #06111f;
   --eros-soft: #f5f7fa;
+  /* Eros brand system v2 */
+  --eros-black: #050A14;
+  --eros-navy: #0A1628;
+  --eros-surface: #0F1F3D;
+  --eros-surface-2: #162340;
+  --eros-blue: #1565C0;
+  --eros-blue-dark: #0D47A1;
+  --eros-blue-pale: #E3F2FD;
+  --eros-gold: #F5A623;
+  --eros-gold-dark: #E65100;
+  --eros-gold-pale: #FFF8E1;
+  --eros-white: #FFFFFF;
+  --eros-text-1: #FFFFFF;
+  --eros-text-2: rgba(255, 255, 255, 0.65);
+  --eros-text-3: rgba(255, 255, 255, 0.35);
+  --eros-border: rgba(255, 255, 255, 0.07);
+  --eros-border-gold: rgba(245, 166, 35, 0.2);
+  --eros-green: #4CAF50;
+  --eros-red: #EF5350;
+  --eros-wa: #25D366;
   --surface: rgba(255, 255, 255, 0.58);
   --surface-elevated: rgba(255, 255, 255, 0.76);
   --surface-strong: rgba(255, 255, 255, 0.92);
@@ -277,4 +296,12 @@
       transparent
     );
   }
+
+  .bg-eros-black { background-color: #050A14; }
+  .bg-eros-navy { background-color: #0A1628; }
+  .bg-eros-surface { background-color: #0F1F3D; }
+  .text-eros-gold { color: #F5A623; }
+  .text-eros-blue { color: #1565C0; }
+  .border-eros { border-color: rgba(255, 255, 255, 0.07); }
+  .border-eros-gold { border-color: rgba(245, 166, 35, 0.2); }
 }
