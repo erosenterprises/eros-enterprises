@@ -23,5 +23,6 @@ export const siteConfig = {
     instagram: "https://instagram.com/erosenterprises",
     facebook: "https://facebook.com/erosenterprises",
     linkedin: "https://linkedin.com/company/erosenterprises",
+    twitter: "@erosenterprises",
   },
 } as const;
