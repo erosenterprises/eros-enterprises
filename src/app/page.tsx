@@ -1,601 +1,360 @@
-import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowRight,
-  BadgeCheck,
-  Building2,
-  Lightbulb,
-  MessageCircle,
-  PhoneCall,
-  ShieldCheck,
-  Sparkles,
-  Star,
-  Workflow,
-  Zap,
-} from "lucide-react";
-
-import { StructuredData } from "@/components/seo/structured-data";
-import { Button } from "@/components/ui/button";
-import { CtaBanner } from "@/components/website/cta-banner";
-import { FadeIn, StaggerGroup, StaggerItem } from "@/components/website/motion";
-import { ProjectCard } from "@/components/website/project-card";
-import { Section } from "@/components/website/section";
-import { SectionHeader } from "@/components/website/section-header";
-import { ServiceCard } from "@/components/website/service-card";
-import { StatBlock } from "@/components/website/stat-block";
-import { TestimonialCard } from "@/components/website/testimonial-card";
-import { WebsiteIcon } from "@/components/website/icon-map";
-import {
-  blogPosts,
-  featuredProjects,
-  heroMetrics,
-  productCategories,
-  services,
-  testimonialHighlights,
-  whyChooseEros,
-} from "@/content/website";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { siteConfig } from "@/config/site";
-import { LeadCaptureForm } from "@/features/leads/components/lead-capture-form";
-import { buildBreadcrumbSchema, buildItemListSchema } from "@/lib/structured-data";
 
-const trustBadges = [
-  "Licensed Experts",
-  "AMC Support",
-  "Smart Automation",
-  "Residential & Commercial",
+const stats = [
+  { num: "500+", label: "Projects Delivered" },
+  { num: "15+", label: "Years Experience" },
+  { num: "4", label: "Service Verticals" },
+  { num: "48hr", label: "AMC Response" },
 ];
 
-const showcaseCards = [
+const services = [
   {
-    title: "Interior Glow Systems",
-    description: "Cove, pendant, niche, and feature lighting shaped around mood, zoning, and finish quality.",
-    tone: "Luxury residences",
+    icon: "💡", title: "Decorative Lighting (ELV)",
+    desc: "Chandelier installations, cove lighting, facade illumination, and bespoke design for homes and commercial spaces.",
+    features: ["Chandelier supply & installation", "LED cove & profile lighting", "Facade & landscape lighting"],
+    href: "/services/decorative-lighting",
   },
   {
-    title: "Exterior Presence Lighting",
-    description: "Facade, landscape, and gate lighting that extends brand character and curb appeal after sunset.",
-    tone: "Villas and premium entries",
+    icon: "🔒", title: "Security Systems",
+    desc: "CCTV, access control, video door phones, and alarm systems — complete security for homes and offices.",
+    features: ["CCTV & NVR systems", "Biometric access control", "Video door phones"],
+    href: "/services/security-systems",
   },
   {
-    title: "Commercial Experience Lighting",
-    description: "Retail and office lighting plans designed to support productivity, visual merchandising, and client confidence.",
-    tone: "Showrooms and workspaces",
+    icon: "⚙️", title: "Smart Automation (AUT)",
+    desc: "Home and office automation — smart switches, scene control, voice integration, and energy management.",
+    features: ["Smart switches & dimmers", "Alexa & Google Home", "Energy monitoring"],
+    href: "/services/smart-automation",
   },
   {
-    title: "Smart Scene Automation",
-    description: "Preset moods, scheduled routines, and intuitive controls that make luxury systems actually easy to use.",
-    tone: "Integrated control",
-  },
-];
-
-const valueBlocks = [
-  {
-    title: "Expert Engineers",
-    description: "Execution teams that understand load planning, detailing, and on-site coordination.",
-    icon: ShieldCheck,
-  },
-  {
-    title: "Site Inspection First",
-    description: "We start with spatial reality, usage patterns, and technical risk before we recommend scope.",
-    icon: Sparkles,
-  },
-  {
-    title: "Transparent Pricing",
-    description: "Quotes built to reduce ambiguity and create better decision-making for clients and consultants.",
-    icon: BadgeCheck,
-  },
-  {
-    title: "Premium Materials",
-    description: "Fixtures, controls, and infrastructure components chosen for reliability and long-term finish quality.",
-    icon: Lightbulb,
-  },
-  {
-    title: "AMC Support",
-    description: "Preventive maintenance and responsive follow-up for properties that need continuity after handover.",
-    icon: Zap,
-  },
-  {
-    title: "Automation Specialists",
-    description: "Controls and scene logic aligned to how people actually live, work, and host in the space.",
-    icon: Workflow,
+    icon: "🔧", title: "AMC Contracts",
+    desc: "Annual Maintenance Contracts with guaranteed response times. Keep systems at peak performance year-round.",
+    features: ["Basic / Standard / Premium tiers", "Emergency callout included", "Spare parts coverage"],
+    href: "/services/amc-services",
   },
 ];
 
-const projectFilters = ["Residential", "Commercial", "Showrooms", "Smart Automation"];
+const whyUs = [
+  { n: "1", title: "End-to-End Ownership", desc: "We design, supply, install and maintain — no handoffs to third parties." },
+  { n: "2", title: "Transparent Quotations", desc: "Detailed line-item quotes with zero hidden costs. What you see is what you pay." },
+  { n: "3", title: "On-Time Delivery", desc: "We commit to timelines and honour them. Professionally managed projects." },
+  { n: "4", title: "Dedicated AMC Support", desc: "Post-sale service backed by SLA guarantees and a dedicated ops team." },
+];
+
+const metrics = [
+  { num: "500+", label: "Projects Completed" },
+  { num: "15+", label: "Years in Business" },
+  { num: "98%", label: "Client Satisfaction" },
+  { num: "50+", label: "Team Members" },
+];
+
+const projects = [
+  { tag: "Residential", tag2: null as null | string, emoji: "🏠", bg: "from-[#091b37] to-[#0F2D54]", title: "Juhu Villa — Full Lighting", desc: "Interior, cove, facade & garden for 5,000 sq ft luxury villa.", loc: "Juhu", year: "2025" },
+  { tag: "Commercial", tag2: "Automation", emoji: "🏢", bg: "from-[#1c0800] to-[#311400]", title: "BKC Corporate HQ", desc: "Smart automation, CCTV & lighting for 8,000 sq ft office.", loc: "BKC", year: "2024" },
+  { tag: "Hospitality", tag2: null as null | string, emoji: "🏨", bg: "from-[#07180e] to-[#0e2d1c]", title: "Hotel Powai — Lobby", desc: "Bespoke chandelier array and atmospheric lighting.", loc: "Powai", year: "2025" },
+  { tag: "Retail", tag2: "Security", emoji: "🛍", bg: "from-[#130022] to-[#220038]", title: "Jewellery Showroom", desc: "High-CRI spotlight, CCTV & access control.", loc: "Andheri", year: "2024" },
+  { tag: "Residential", tag2: "Smart", emoji: "🏡", bg: "from-[#001826] to-[#003348]", title: "Smart Home, Bandra", desc: "Full automation — lighting scenes, climate & security.", loc: "Bandra", year: "2025" },
+  { tag: "Industrial", tag2: null as null | string, emoji: "🏭", bg: "from-[#1a1200] to-[#2e2000]", title: "Factory Campus, Thane", desc: "Industrial LED flood lighting and perimeter security.", loc: "Thane", year: "2024" },
+];
+
+const products = [
+  { emoji: "🔆", bg: "from-[#0A1628] to-[#162842]", cat: "Chandelier", name: "Crystal Pendant XL", price: "₹28,500" },
+  { emoji: "💡", bg: "from-[#0D1E0A] to-[#162E12]", cat: "LED Strip", name: "Cove Light Pro Kit", price: "₹4,200" },
+  { emoji: "📹", bg: "from-[#1A0A00] to-[#2A1500]", cat: "Security", name: "4MP IP Camera", price: "₹6,800" },
+  { emoji: "🔌", bg: "from-[#0A0A1A] to-[#14143A]", cat: "Smart", name: "Touch Switch 6-Gang", price: "₹8,500" },
+];
+
+const testimonials = [
+  { initials: "RS", name: "Rajesh Shah", loc: "Juhu, Mumbai · Homeowner", svc: "Lighting", svcColor: "blue", quote: "Eros transformed our villa completely. The chandelier they recommended is now the focal point of our living room. Exceptional quality and a very professional team." },
+  { initials: "PM", name: "Priya Mehta", loc: "BKC, Mumbai · Facility Manager", svc: "AMC", svcColor: "gold", quote: "We have had their AMC contract for 3 years. Response is always within the promised time and the team is extremely knowledgeable. Complete peace of mind." },
+  { initials: "AK", name: "Amit Kulkarni", loc: "Powai, Mumbai · Office Owner", svc: "Security", svcColor: "green", quote: "They installed CCTV and access control across our entire office. The system works flawlessly and the remote monitoring app is excellent." },
+];
+
+const brands = ["Philips", "Havells", "Hikvision", "Dahua", "Legrand", "Schneider", "Lutron", "Wipro"];
 
 export default function HomePage() {
   return (
     <>
-      <StructuredData
-        data={[
-          buildBreadcrumbSchema([{ name: "Home", path: "/" }]),
-          buildItemListSchema(
-            "Eros Enterprises services",
-            services.map((service) => ({
-              name: service.name,
-              path: service.href,
-              description: service.summary,
-            })),
-          ),
-        ]}
-      />
-      <HeroSection />
-      <StatsSection />
-      <ServicesSection />
-      <LightingShowcaseSection />
-      <WhyChooseSection />
-      <ProjectsSection />
-      <LeadSection />
-      <ReviewsSection />
-      <InsightsSection />
-      <FinalCtaSection />
-    </>
-  );
-}
-
-function HeroSection() {
-  return (
-    <section className="relative overflow-hidden px-3 pt-6 sm:px-5 lg:pt-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="premium-card-strong relative overflow-hidden rounded-[2.25rem]">
-          <div className="absolute inset-0 bg-[var(--hero-gradient)]" />
-          <div className="site-grid absolute inset-0 opacity-[0.08]" />
-          <div className="absolute -left-12 top-14 size-44 rounded-full bg-[#007BFF]/18 blur-3xl" />
-          <div className="absolute right-0 top-8 size-52 rounded-full bg-[#F4A300]/16 blur-3xl" />
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FFCC33]/80 to-transparent" />
-
-          <div className="relative grid gap-10 px-6 py-10 sm:px-8 lg:grid-cols-[1.04fr_0.96fr] lg:px-10 lg:py-14">
-            <FadeIn className="space-y-8">
-              <div className="space-y-5">
-                <div className="premium-chip inline-flex rounded-full px-4 py-1.5 text-[11px] font-semibold tracking-[0.3em] uppercase">
-                  Lighting with Purpose
-                </div>
-                <h1 className="max-w-4xl font-heading text-5xl leading-[0.96] font-semibold tracking-[-0.05em] text-[color:var(--foreground)] sm:text-6xl lg:text-[4.7rem]">
-                  Premium decorative lighting and smart electrical solutions.
-                </h1>
-                <p className="max-w-2xl text-base leading-8 text-[color:var(--muted-foreground)] sm:text-lg">
-                  EROS Enterprises designs, installs, and supports luxury lighting, automation, electrical infrastructure, and maintenance systems for residential and commercial spaces that need to feel elevated from day one.
-                </p>
+      {/* HERO */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#0C1E42] to-[#050A14] px-6 lg:px-10 py-20 lg:py-24 min-h-[520px] flex items-center">
+        <div className="absolute top-[-80px] right-[-60px] w-[440px] h-[440px] rounded-full pointer-events-none"
+             style={{background:"radial-gradient(circle,rgba(21,101,192,0.09) 0%,transparent 70%)"}} />
+        <div className="max-w-[1100px] mx-auto w-full relative z-10">
+          <div className="grid lg:grid-cols-[1fr_250px] gap-10 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[11px] font-bold text-[#F5A623] uppercase tracking-[0.06em] mb-5"
+                   style={{background:"rgba(245,166,35,0.12)",border:"1px solid rgba(245,166,35,0.3)"}}>
+                Mumbai&apos;s Premier Lighting &amp; ELV Integrator
               </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <Button
-                  asChild
-                  size="lg"
-                  className="h-13 rounded-full bg-[linear-gradient(135deg,#0047B3,#00A6FF)] px-7 text-base font-semibold text-white shadow-[0_18px_44px_rgba(0,123,255,0.24)]"
-                >
-                  <a href={`tel:${siteConfig.phone}`} className="inline-flex items-center gap-2">
-                    Call Now
-                    <PhoneCall className="size-4" />
-                  </a>
-                </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  className="h-13 rounded-full border-[color:var(--border-strong)] bg-[color:var(--surface-elevated)] px-7 text-base text-[color:var(--foreground)] hover:bg-[color:var(--surface-accent)]"
-                >
-                  <a
-                    href={`https://wa.me/${siteConfig.whatsapp}`}
-                    className="inline-flex items-center gap-2"
-                  >
-                    WhatsApp
-                    <MessageCircle className="size-4 text-[#F4A300]" />
-                  </a>
-                </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  className="h-13 rounded-full bg-[linear-gradient(135deg,#F4A300,#FFCC33)] px-7 text-base font-semibold text-[#06111F] shadow-[0_18px_44px_rgba(244,163,0,0.24)]"
-                >
-                  <Link href="/contact" className="inline-flex items-center gap-2">
-                    Get Free Quote
-                    <ArrowRight className="size-4" />
-                  </Link>
-                </Button>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                {trustBadges.map((item) => (
-                  <div
-                    key={item}
-                    className="premium-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm"
-                  >
-                    <BadgeCheck className="size-4 text-[#F4A300]" />
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={0.08}>
-              <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-                <div className="premium-card relative overflow-hidden rounded-[2rem] p-5">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,204,51,0.18),transparent_20%),radial-gradient(circle_at_82%_18%,rgba(0,166,255,0.18),transparent_22%)]" />
-                  <Image
-                    src="/logo.png"
-                    alt="EROS Enterprises logo"
-                    width={560}
-                    height={320}
-                    className="relative h-auto w-full object-contain"
-                    priority
-                  />
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    <FloatingMetric label="Licensed Experts" value="12+ years" />
-                    <FloatingMetric label="AMC Support" value="24/7 care" />
-                    <FloatingMetric label="Automation" value="Scene-ready" />
-                    <FloatingMetric label="Execution" value="End-to-end" />
-                  </div>
-                </div>
-
-                <div className="grid gap-4">
-                  <div className="premium-card rounded-[1.6rem] p-5">
-                    <p className="text-[11px] font-semibold tracking-[0.3em] text-[color:var(--muted-foreground)] uppercase">
-                      Smart control
-                    </p>
-                    <div className="mt-4 grid gap-3">
-                      {[
-                        ["Ambient scene", "72%"],
-                        ["Facade lighting", "88%"],
-                        ["Security routing", "Optimized"],
-                      ].map(([label, value]) => (
-                        <div
-                          key={label}
-                          className="flex items-center justify-between rounded-[1.1rem] border border-[color:var(--border)] bg-[color:var(--surface-accent)] px-4 py-3"
-                        >
-                          <span className="text-sm text-[color:var(--muted-foreground)]">{label}</span>
-                          <span className="text-sm font-semibold text-[color:var(--foreground)]">
-                            {value}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="rounded-[1.6rem] bg-[linear-gradient(135deg,#0047B3,#00A6FF_55%,#F4A300)] p-[1px] shadow-[0_24px_55px_rgba(0,123,255,0.18)]">
-                    <div className="rounded-[1.55rem] bg-[color:var(--background)]/92 p-5">
-                      <p className="text-[11px] font-semibold tracking-[0.3em] text-[color:var(--muted-foreground)] uppercase">
-                        Signature promise
-                      </p>
-                      <h2 className="mt-3 font-heading text-2xl font-semibold tracking-[-0.03em] text-[color:var(--foreground)]">
-                        Luxury presentation. Disciplined engineering.
-                      </h2>
-                      <p className="mt-3 text-sm leading-7 text-[color:var(--muted-foreground)]">
-                        Every EROS project is planned to make the space look exceptional and operate reliably long after installation.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </FadeIn>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FloatingMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[1.2rem] border border-[color:var(--border)] bg-[color:var(--surface-accent)] px-4 py-3">
-      <div className="text-[11px] font-semibold tracking-[0.28em] text-[color:var(--muted-foreground)] uppercase">
-        {label}
-      </div>
-      <div className="mt-2 text-lg font-semibold text-[color:var(--foreground)]">{value}</div>
-    </div>
-  );
-}
-
-function StatsSection() {
-  return (
-    <Section>
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        {heroMetrics.map((metric) => (
-          <StatBlock key={metric.label} value={metric.value} label={metric.label} />
-        ))}
-      </div>
-    </Section>
-  );
-}
-
-function ServicesSection() {
-  return (
-    <Section className="surface-divider">
-      <SectionHeader
-        eyebrow="Services"
-        title="A premium electrical and lighting stack built to convert enquiries into serious projects."
-        description="From decorative lighting and smart automation to core electrical systems and AMC support, every service is positioned around trust, finish quality, and operational confidence."
-      />
-      <StaggerGroup className="mt-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        {services.slice(0, 8).map((service) => (
-          <StaggerItem key={service.slug}>
-            <ServiceCard
-              href={service.href}
-              name={service.name}
-              summary={service.summary}
-              icon={service.icon}
-            />
-          </StaggerItem>
-        ))}
-      </StaggerGroup>
-    </Section>
-  );
-}
-
-function LightingShowcaseSection() {
-  return (
-    <Section>
-      <div className="grid gap-8 lg:grid-cols-[0.88fr_1.12fr]">
-        <SectionHeader
-          eyebrow="Lighting Showcase"
-          title="Interior, exterior, commercial, and smart lighting concepts presented like a luxury showroom."
-          description="We do not have site photography in the repo yet, so the section is built as a polished, image-ready showcase system that can accept future project visuals without redesign."
-        />
-        <div className="grid gap-4 sm:grid-cols-2">
-          {showcaseCards.map((card, index) => (
-            <div
-              key={card.title}
-              className="premium-card relative overflow-hidden rounded-[1.8rem] p-5"
-            >
-              <div
-                className="absolute inset-0 opacity-90"
-                style={{
-                  background:
-                    index % 2 === 0
-                      ? "radial-gradient(circle at 18% 18%, rgba(255, 204, 51, 0.18), transparent 22%), linear-gradient(140deg, rgba(6, 17, 31, 0.9), rgba(16, 43, 70, 0.72))"
-                      : "radial-gradient(circle at 82% 18%, rgba(0, 166, 255, 0.18), transparent 22%), linear-gradient(140deg, rgba(16, 43, 70, 0.82), rgba(6, 17, 31, 0.96))",
-                }}
-              />
-              <div className="relative">
-                <div className="mb-8 h-44 rounded-[1.4rem] border border-white/10 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.18),transparent_22%),radial-gradient(circle_at_80%_70%,rgba(255,204,51,0.18),transparent_18%),linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))]" />
-                <div className="text-[11px] font-semibold tracking-[0.28em] text-white/68 uppercase">
-                  {card.tone}
-                </div>
-                <h3 className="mt-3 font-heading text-2xl font-semibold tracking-[-0.03em] text-white">
-                  {card.title}
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-white/72">{card.description}</p>
+              <h1 className="font-heading font-extrabold text-[40px] lg:text-[50px] text-white leading-[1.1] mb-4 max-w-[520px]">
+                Lighting that{" "}<em className="not-italic text-[#F5A623]">Elevates</em><br />Every Space
+              </h1>
+              <p className="text-[15px] text-[#8896AA] leading-[1.75] max-w-[460px] mb-7">
+                From chandelier installations to smart automation and security systems — Eros Enterprises designs,
+                supplies, and maintains environments that inspire. Trusted by 500+ clients since 2009.
+              </p>
+              <div className="flex gap-3 flex-wrap">
+                <Link href="/contact"
+                  className="inline-flex items-center gap-2 bg-[#1565C0] hover:bg-[#1E7FE8] text-white px-5 py-3 rounded-[8px] text-[13px] font-semibold transition-colors">
+                  Book Free Site Visit
+                </Link>
+                <Link href="/projects"
+                  className="inline-flex items-center gap-2 text-[#E8EAF0] px-5 py-3 rounded-[8px] text-[13px] font-semibold transition-colors"
+                  style={{border:"1px solid rgba(255,255,255,0.18)"}}>
+                  View Projects
+                </Link>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
-    </Section>
-  );
-}
-
-function WhyChooseSection() {
-  return (
-    <Section className="surface-divider">
-      <SectionHeader
-        eyebrow="Why Choose EROS"
-        title="The difference is not only what gets installed. It is how the project feels before, during, and after delivery."
-        description="We pair expert engineering with premium presentation so clients get cleaner planning, stronger confidence, and better on-site outcomes."
-      />
-      <div className="mt-10 grid gap-5 lg:grid-cols-3">
-        {valueBlocks.map((item) => (
-          <div key={item.title} className="premium-card rounded-[1.8rem] p-6">
-            <div className="flex size-14 items-center justify-center rounded-[1.15rem] border border-[color:var(--border-strong)] bg-[linear-gradient(135deg,rgba(0,123,255,0.14),rgba(255,204,51,0.14))]">
-              <item.icon className="size-6 text-[#F4A300]" />
-            </div>
-            <h3 className="mt-5 font-heading text-2xl font-semibold tracking-[-0.03em] text-[color:var(--foreground)]">
-              {item.title}
-            </h3>
-            <p className="mt-3 text-sm leading-7 text-[color:var(--muted-foreground)]">
-              {item.description}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-12 grid gap-5 lg:grid-cols-3">
-        {whyChooseEros.map((item) => (
-          <div key={item.title} className="premium-card rounded-[1.8rem] p-6">
-            <WebsiteIcon name={item.icon} className="size-6 text-[#007BFF]" />
-            <h3 className="mt-4 font-heading text-2xl font-semibold tracking-[-0.03em] text-[color:var(--foreground)]">
-              {item.title}
-            </h3>
-            <p className="mt-3 text-sm leading-7 text-[color:var(--muted-foreground)]">
-              {item.description}
-            </p>
-          </div>
-        ))}
-      </div>
-    </Section>
-  );
-}
-
-function ProjectsSection() {
-  return (
-    <Section>
-      <SectionHeader
-        eyebrow="Projects Showcase"
-        title="Luxury project storytelling designed to build trust before the first site call."
-        description="The portfolio cards are framed to feel like a premium case-study wall, with room for real project photography and category-based filtering as the library grows."
-      />
-      <div className="mt-8 flex flex-wrap gap-3">
-        {projectFilters.map((filter, index) => (
-          <button
-            key={filter}
-            type="button"
-            className={
-              index === 0
-                ? "rounded-full bg-[linear-gradient(135deg,#0047B3,#00A6FF)] px-4 py-2 text-sm font-semibold text-white shadow-[0_14px_32px_rgba(0,123,255,0.2)]"
-                : "premium-chip rounded-full px-4 py-2 text-sm font-semibold"
-            }
-          >
-            {filter}
-          </button>
-        ))}
-      </div>
-      <div className="mt-10 grid gap-5 lg:grid-cols-3">
-        {featuredProjects.map((project) => (
-          <ProjectCard key={project.title} {...project} />
-        ))}
-      </div>
-    </Section>
-  );
-}
-
-function LeadSection() {
-  return (
-    <Section className="surface-divider">
-      <div className="grid gap-8 xl:grid-cols-[0.92fr_1.08fr]">
-        <div className="space-y-6">
-          <SectionHeader
-            eyebrow="Free Consultation"
-            title="A conversion-focused enquiry experience for premium clients."
-            description="Use the short form to request a quote, site visit, or consultation. We pair the form with direct WhatsApp and phone actions so enquiries can convert however the client is most comfortable."
-          />
-          <div className="premium-card rounded-[1.9rem] p-6">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <QuickAction
-                href={`https://wa.me/${siteConfig.whatsapp}`}
-                icon={MessageCircle}
-                label="WhatsApp instantly"
-                value="Fast project response"
-                accent="text-[#F4A300]"
-              />
-              <QuickAction
-                href={`tel:${siteConfig.phone}`}
-                icon={PhoneCall}
-                label="Call expert team"
-                value={siteConfig.phone}
-                accent="text-[#007BFF]"
-              />
-            </div>
-          </div>
-        </div>
-        <LeadCaptureForm
-          variant="homepageEnquiry"
-          sourcePage="/"
-          ctaLocation="homepage-premium-lead-section"
-        />
-      </div>
-    </Section>
-  );
-}
-
-function QuickAction({
-  href,
-  icon: Icon,
-  label,
-  value,
-  accent,
-}: {
-  href: string;
-  icon: typeof PhoneCall;
-  label: string;
-  value: string;
-  accent: string;
-}) {
-  return (
-    <a
-      href={href}
-      className="theme-transition rounded-[1.35rem] border border-[color:var(--border)] bg-[color:var(--surface-accent)] px-4 py-4 hover:shadow-[var(--shadow-soft)]"
-    >
-      <Icon className={`size-5 ${accent}`} />
-      <div className="mt-3 text-sm font-semibold text-[color:var(--foreground)]">{label}</div>
-      <div className="mt-1 text-sm text-[color:var(--muted-foreground)]">{value}</div>
-    </a>
-  );
-}
-
-function ReviewsSection() {
-  return (
-    <Section>
-      <SectionHeader
-        eyebrow="Client Reviews"
-        title="Trust signals shaped like a premium hospitality brand, not a generic contractor website."
-        description="Testimonials are displayed as conversion tools: clear praise, visual polish, and enough detail to reassure higher-intent buyers."
-      />
-      <div className="mt-10 grid gap-5 lg:grid-cols-3">
-        {testimonialHighlights.map((testimonial) => (
-          <div key={testimonial.name} className="space-y-3">
-            <TestimonialCard {...testimonial} />
-            <div className="flex gap-1 pl-2 text-[#F4A300]">
-              {Array.from({ length: testimonial.rating }).map((_, index) => (
-                <Star key={index} className="size-4 fill-current" />
+            <div className="flex flex-row lg:flex-col gap-2.5 flex-wrap">
+              {stats.map((s) => (
+                <div key={s.label} className="flex-1 min-w-[85px] rounded-[12px] px-4 py-3.5 text-center"
+                     style={{background:"rgba(15,31,61,0.85)",border:"1px solid rgba(21,101,192,0.22)"}}>
+                  <div className="font-heading text-[28px] font-extrabold text-[#F5A623] leading-none">{s.num}</div>
+                  <div className="text-[10px] text-[#8896AA] uppercase tracking-[0.05em] mt-1">{s.label}</div>
+                </div>
               ))}
             </div>
           </div>
-        ))}
-      </div>
-    </Section>
-  );
-}
+        </div>
+      </section>
 
-function InsightsSection() {
-  return (
-    <Section className="surface-divider">
-      <div className="grid gap-8 lg:grid-cols-[0.76fr_1.24fr]">
-        <SectionHeader
-          eyebrow="Insights"
-          title="SEO-friendly editorial previews with the same premium brand language."
-          description="These cards can later connect to a CMS, but they already work as high-end knowledge panels that reinforce EROS expertise."
-        />
-        <div className="grid gap-5 lg:grid-cols-3">
-          {blogPosts.map((post, index) => (
-            <Link
-              key={post.title}
-              href={post.href}
-              className="premium-card theme-transition rounded-[1.8rem] p-6 hover:-translate-y-1 hover:shadow-[var(--shadow-strong)]"
-            >
-              <div className="text-[11px] font-semibold tracking-[0.28em] text-[#007BFF] uppercase">
-                Insight 0{index + 1}
+      {/* TRUST BAR */}
+      <div className="bg-[#0F1F3D]" style={{borderTop:"1px solid rgba(21,101,192,0.22)",borderBottom:"1px solid rgba(21,101,192,0.22)"}}>
+        <div className="max-w-[1100px] mx-auto grid grid-cols-2 lg:grid-cols-4">
+          {[
+            { icon: "🛡️", title: "ISO Certified", sub: "Quality Assured" },
+            { icon: "⏱️", title: "48-Hour SLA", sub: "AMC Guaranteed" },
+            { icon: "🏗️", title: "500+ Projects", sub: "Across Mumbai" },
+            { icon: "🎧", title: "24/7 Support", sub: "For AMC Clients" },
+          ].map((t, i) => (
+            <div key={t.title} className={`flex items-center gap-3 px-5 py-4 ${i<3?"border-r":""} ${i<2?"border-b lg:border-b-0":""}`}
+                 style={{borderColor:"rgba(255,255,255,0.06)"}}>
+              <div className="w-9 h-9 rounded-[8px] flex items-center justify-center text-[18px] flex-shrink-0"
+                   style={{background:"rgba(21,101,192,0.14)"}}>
+                {t.icon}
               </div>
-              <h3 className="mt-4 font-heading text-2xl font-semibold tracking-[-0.03em] text-[color:var(--foreground)]">
-                {post.title}
-              </h3>
-              <p className="mt-3 text-sm leading-7 text-[color:var(--muted-foreground)]">
-                {post.excerpt}
-              </p>
-            </Link>
+              <div>
+                <div className="text-[13px] font-bold text-white">{t.title}</div>
+                <div className="text-[11px] text-[#8896AA]">{t.sub}</div>
+              </div>
+            </div>
           ))}
         </div>
       </div>
-      <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        {productCategories.map((category) => (
-          <div key={category.title} className="premium-card rounded-[1.6rem] p-5">
-            <div className="text-[11px] font-semibold tracking-[0.28em] text-[#F4A300] uppercase">
-              Product Ecosystem
-            </div>
-            <h3 className="mt-3 font-heading text-2xl font-semibold tracking-[-0.03em] text-[color:var(--foreground)]">
-              {category.title}
-            </h3>
-            <p className="mt-3 text-sm leading-7 text-[color:var(--muted-foreground)]">
-              {category.description}
-            </p>
-          </div>
-        ))}
-      </div>
-    </Section>
-  );
-}
 
-function FinalCtaSection() {
-  return (
-    <Section>
-      <CtaBanner
-        title="Transform your space with premium lighting solutions."
-        description="Request a site visit, talk to the expert team, or move directly into a quotation conversation with EROS Enterprises."
-        primaryLabel="Request Site Visit"
-        secondaryLabel="Call Expert Team"
-        secondaryHref="/contact"
-      />
-      <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-[color:var(--muted-foreground)]">
-        <div className="inline-flex items-center gap-2">
-          <Building2 className="size-4 text-[#007BFF]" />
-          Residential and commercial execution
+      {/* SERVICES */}
+      <section className="px-6 lg:px-10 py-14">
+        <div className="max-w-[1100px] mx-auto">
+          <div className="eros-eyebrow mb-1.5">What We Do</div>
+          <h2 className="font-heading font-extrabold text-[28px] text-white mb-2.5">Our <span className="text-[#F5A623]">Services</span></h2>
+          <p className="text-[14px] text-[#8896AA] max-w-[480px] leading-[1.7] mb-8">End-to-end solutions across decorative lighting, security, smart automation, and maintenance contracts.</p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {services.map((s) => (
+              <div key={s.title} className="relative overflow-hidden group rounded-[14px] p-6"
+                   style={{background:"#0F1F3D",border:"1px solid rgba(21,101,192,0.22)",transition:"border-color 0.2s"}}>
+                <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-[14px] bg-[#1565C0] opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="w-[46px] h-[46px] rounded-[11px] flex items-center justify-center text-[22px] mb-3.5"
+                     style={{background:"rgba(21,101,192,0.14)",border:"1px solid rgba(21,101,192,0.22)"}}>
+                  {s.icon}
+                </div>
+                <h3 className="font-heading font-bold text-[16px] text-white mb-1.5">{s.title}</h3>
+                <p className="text-[13px] text-[#8896AA] leading-[1.6] mb-3">{s.desc}</p>
+                <ul className="space-y-1.5 mb-4">
+                  {s.features.map((f) => (
+                    <li key={f} className="flex items-center gap-1.5 text-[12px] text-[#B0B8CC]">
+                      <CheckCircle2 className="w-3 h-3 text-[#25D366] flex-shrink-0" />{f}
+                    </li>
+                  ))}
+                </ul>
+                <Link href={s.href} className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#F5A623] hover:gap-2 transition-all">
+                  Explore service <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="inline-flex items-center gap-2">
-          <Workflow className="size-4 text-[#F4A300]" />
-          Smart automation expertise
+      </section>
+
+      {/* WHY US */}
+      <section className="bg-[#0A1628] px-6 lg:px-10 py-14">
+        <div className="max-w-[1100px] mx-auto">
+          <div className="grid lg:grid-cols-2 gap-10 items-center">
+            <div>
+              <div className="eros-eyebrow mb-1.5">Why Eros</div>
+              <h2 className="font-heading font-extrabold text-[28px] text-white mb-2.5">15 Years of <span className="text-[#F5A623]">Trusted</span> Expertise</h2>
+              <p className="text-[14px] text-[#8896AA] leading-[1.7] mb-6">Built on quality, transparency, and long-term client relationships.</p>
+              <div className="space-y-4">
+                {whyUs.map((w) => (
+                  <div key={w.n} className="flex gap-3.5 items-start">
+                    <div className="w-9 h-9 bg-[#1565C0] rounded-[9px] flex items-center justify-center font-heading font-extrabold text-[13px] text-white flex-shrink-0">{w.n}</div>
+                    <div>
+                      <div className="font-semibold text-[14px] text-white mb-0.5">{w.title}</div>
+                      <div className="text-[12px] text-[#8896AA] leading-[1.6]">{w.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {metrics.map((m) => (
+                <div key={m.label} className="rounded-[14px] p-5 text-center"
+                     style={{background:"#0F1F3D",border:"1px solid rgba(21,101,192,0.22)"}}>
+                  <div className="font-heading text-[34px] font-extrabold text-[#F5A623] leading-none">{m.num}</div>
+                  <div className="text-[11px] text-[#8896AA] mt-1.5">{m.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-        <div className="inline-flex items-center gap-2">
-          <ShieldCheck className="size-4 text-[#007BFF]" />
-          AMC-backed support continuity
+      </section>
+
+      {/* PROJECTS */}
+      <section className="px-6 lg:px-10 py-14">
+        <div className="max-w-[1100px] mx-auto">
+          <div className="eros-eyebrow mb-1.5">Our Work</div>
+          <h2 className="font-heading font-extrabold text-[28px] text-white mb-2.5">Featured <span className="text-[#F5A623]">Projects</span></h2>
+          <p className="text-[14px] text-[#8896AA] max-w-[480px] leading-[1.7] mb-8">Recent installations across Mumbai&apos;s premier residential and commercial spaces.</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {projects.map((p) => (
+              <div key={p.title} className="rounded-[14px] overflow-hidden"
+                   style={{background:"#0F1F3D",border:"1px solid rgba(21,101,192,0.22)"}}>
+                <div className={`h-[155px] bg-gradient-to-br ${p.bg} flex items-center justify-center text-[50px] relative`}>
+                  <div className="absolute top-2.5 left-2.5 flex gap-1.5">
+                    <span className="tag-gold">{p.tag}</span>
+                    {p.tag2 && <span className="tag-blue">{p.tag2}</span>}
+                  </div>
+                  {p.emoji}
+                </div>
+                <div className="p-3.5">
+                  <h3 className="font-heading font-bold text-[13px] text-white mb-1">{p.title}</h3>
+                  <p className="text-[11px] text-[#8896AA] mb-2">{p.desc}</p>
+                  <div className="flex gap-2.5 text-[10px] text-[#5A6B82]">
+                    <span>📍 {p.loc}</span><span>📅 {p.year}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="text-center mt-7">
+            <Link href="/projects" className="inline-flex items-center gap-2 bg-[#1565C0] hover:bg-[#1E7FE8] text-white px-5 py-3 rounded-[8px] text-[13px] font-semibold transition-colors">
+              View All Projects <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* PRODUCTS */}
+      <section className="bg-[#0A1628] px-6 lg:px-10 py-14">
+        <div className="max-w-[1100px] mx-auto">
+          <div className="eros-eyebrow mb-1.5">Products</div>
+          <h2 className="font-heading font-extrabold text-[28px] text-white mb-2.5">Premium <span className="text-[#F5A623]">Product Range</span></h2>
+          <p className="text-[14px] text-[#8896AA] max-w-[480px] leading-[1.7] mb-8">Curated lighting, smart controls, and security hardware with professional installation.</p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {products.map((p) => (
+              <div key={p.name} className="rounded-[14px] overflow-hidden"
+                   style={{background:"#0F1F3D",border:"1px solid rgba(21,101,192,0.22)"}}>
+                <div className={`h-[106px] bg-gradient-to-br ${p.bg} flex items-center justify-center text-[40px]`}
+                     style={{borderBottom:"1px solid rgba(21,101,192,0.22)"}}>
+                  {p.emoji}
+                </div>
+                <div className="p-3">
+                  <div className="text-[10px] font-bold text-[#1E7FE8] uppercase tracking-[0.05em] mb-1">{p.cat}</div>
+                  <div className="font-heading font-semibold text-[12px] text-white mb-1.5">{p.name}</div>
+                  <div className="text-[13px] font-bold text-[#F5A623] mb-2">{p.price}</div>
+                  <button className="w-full rounded-[5px] py-1.5 text-[11px] font-semibold text-[#5B9BD5] transition-colors"
+                          style={{background:"rgba(21,101,192,0.14)",border:"1px solid rgba(21,101,192,0.22)"}}>
+                    Enquire
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="text-center mt-7">
+            <Link href="/products" className="inline-flex items-center gap-2 bg-[#1565C0] hover:bg-[#1E7FE8] text-white px-5 py-3 rounded-[8px] text-[13px] font-semibold transition-colors">
+              Browse Full Catalogue <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section className="px-6 lg:px-10 py-14">
+        <div className="max-w-[1100px] mx-auto">
+          <div className="eros-eyebrow mb-1.5">Testimonials</div>
+          <h2 className="font-heading font-extrabold text-[28px] text-white mb-2.5">What Clients <span className="text-[#F5A623]">Say</span></h2>
+          <p className="text-[14px] text-[#8896AA] max-w-[480px] leading-[1.7] mb-8">Genuine feedback from homeowners, architects, facility managers, and business owners.</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {testimonials.map((t) => (
+              <div key={t.name} className="relative rounded-[14px] p-5"
+                   style={{background:"#0F1F3D",border:"1px solid rgba(21,101,192,0.22)"}}>
+                <div className="text-[30px] text-[#F5A623] leading-none mb-1.5 font-serif" style={{opacity:0.2}}>&ldquo;</div>
+                <div className="text-[#F5A623] text-[11px] tracking-[2px] mb-2.5">★★★★★</div>
+                <div className="absolute top-3.5 right-3.5">
+                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-[4px] border ${
+                    t.svcColor==="blue" ? "text-[#5B9BD5]" :
+                    t.svcColor==="gold" ? "text-[#F5A623]" : "text-[#25D366]"
+                  }`} style={{
+                    background: t.svcColor==="blue" ? "rgba(21,101,192,0.14)" : t.svcColor==="gold" ? "rgba(245,166,35,0.12)" : "rgba(37,211,102,0.1)",
+                    borderColor: t.svcColor==="blue" ? "rgba(21,101,192,0.25)" : t.svcColor==="gold" ? "rgba(245,166,35,0.3)" : "rgba(37,211,102,0.25)"
+                  }}>{t.svc}</span>
+                </div>
+                <p className="text-[12px] text-[#B0B8CC] leading-[1.7] italic mb-4">&ldquo;{t.quote}&rdquo;</p>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-[#5B9BD5]"
+                       style={{background:"rgba(21,101,192,0.2)",border:"1px solid rgba(21,101,192,0.3)"}}>
+                    {t.initials}
+                  </div>
+                  <div>
+                    <div className="text-[12px] font-semibold text-white">{t.name}</div>
+                    <div className="text-[10px] text-[#8896AA]">{t.loc}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* BRANDS */}
+      <div className="bg-[#0A1628] py-7 px-6 lg:px-10"
+           style={{borderTop:"1px solid rgba(255,255,255,0.06)",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+        <div className="text-[11px] font-semibold text-[#8896AA] uppercase tracking-[0.1em] text-center mb-5">Trusted Brands We Install &amp; Supply</div>
+        <div className="flex flex-wrap items-center justify-center gap-2.5">
+          {brands.map((b) => (
+            <div key={b} className="rounded-[7px] px-4 py-2 text-[11px] font-bold text-[#8896AA] uppercase tracking-[0.06em]"
+                 style={{background:"#0F1F3D",border:"1px solid rgba(21,101,192,0.22)"}}>
+              {b}
+            </div>
+          ))}
         </div>
       </div>
-    </Section>
+
+      {/* CTA */}
+      <div className="px-6 lg:px-10 py-14 text-center"
+           style={{background:"linear-gradient(130deg,#0C2060 0%,#0E3080 50%,#0A1840 100%)",borderTop:"1px solid rgba(21,101,192,0.4)",borderBottom:"1px solid rgba(21,101,192,0.4)"}}>
+        <div className="max-w-[1100px] mx-auto">
+          <h2 className="font-heading font-extrabold text-[28px] lg:text-[32px] text-white mb-2.5">Ready to Transform Your Space?</h2>
+          <p className="text-[14px] mb-7" style={{color:"rgba(255,255,255,0.65)"}}>Talk to our experts. Get a free site visit and customised quote within 24 hours.</p>
+          <div className="flex gap-3 justify-center flex-wrap">
+            <a href={`https://wa.me/${siteConfig.whatsapp}`} target="_blank" rel="noopener noreferrer"
+               className="inline-flex items-center gap-2 bg-[#F5A623] text-[#050A14] px-5 py-3 rounded-[8px] text-[13px] font-bold hover:brightness-105 transition-all">
+              💬 WhatsApp Us Now
+            </a>
+            <a href={`tel:${siteConfig.phone}`}
+               className="inline-flex items-center gap-2 px-5 py-3 rounded-[8px] text-[13px] font-semibold text-white transition-colors"
+               style={{border:"1px solid rgba(255,255,255,0.3)"}}>
+              📞 Call {siteConfig.phone}
+            </a>
+            <Link href="/contact"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-[8px] text-[13px] font-semibold text-white transition-colors"
+              style={{border:"1px solid rgba(255,255,255,0.3)"}}>
+              📅 Book Site Visit
+            </Link>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
