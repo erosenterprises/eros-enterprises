@@ -6,16 +6,26 @@ import { services } from "@/content/website";
 import { siteConfig } from "@/config/site";
 import { useLeadCaptureForm } from "@/features/leads/hooks/use-lead-capture-form";
 
-function ContactForm() {
+const trustPoints = [
+  { icon: "🆓", title: "Completely Free", sub: "Zero cost, no obligation" },
+  { icon: "📍", title: "We Come to You", sub: "All of Mumbai covered" },
+  { icon: "⏱️", title: "Within 48 Hours", sub: "Fast scheduling" },
+  { icon: "📋", title: "Expert Assessment", sub: "Written recommendations" },
+];
+
+const areas = ["South Mumbai", "Western Suburbs", "Bandra to Virar", "BKC & Kurla", "Powai & Thane", "Navi Mumbai", "Pune (on request)", "Lonavala (on request)"];
+
+function SiteVisitForm() {
   const { form, response, isPending, submit } = useLeadCaptureForm({
     defaultValues: {
-      sourcePage: "/contact",
-      ctaLocation: "contact_page",
+      sourcePage: "/site-visit",
+      ctaLocation: "site_visit_page",
       source: "WEBSITE",
       status: "NEW",
-      priority: "MEDIUM",
+      priority: "HIGH",
     },
   });
+
   const errors = form.formState.errors;
   const inputCls = "w-full h-[46px] rounded-[10px] px-4 text-[13px] font-medium transition-all outline-none focus:ring-2 focus:ring-[#1565C0]";
   const inputStyle = { background:"rgba(10,22,40,0.8)", border:"1px solid rgba(21,101,192,0.25)", color:"#E8EAF0" };
@@ -23,12 +33,12 @@ function ContactForm() {
 
   if (response.success) {
     return (
-      <div className="rounded-[20px] p-10 text-center"
+      <div className="rounded-[20px] overflow-hidden text-center p-10"
            style={{ background:"rgba(10,22,40,0.92)", border:"1px solid rgba(21,101,192,0.25)", boxShadow:"0 24px 60px rgba(5,10,20,0.5)" }}>
         <div className="text-[48px] mb-4">✅</div>
-        <h3 className="font-heading font-bold text-[20px] text-white mb-3">Message Received!</h3>
+        <h3 className="font-heading font-bold text-[20px] text-white mb-3">Site Visit Requested!</h3>
         <p className="text-[13px] mb-2" style={{ color:"#8896AA" }}>Reference: <span className="text-[#F5A623] font-bold">{response.data?.leadNumber}</span></p>
-        <p className="text-[13px]" style={{ color:"#8896AA" }}>We&apos;ll get back to you within 2 business hours.</p>
+        <p className="text-[13px]" style={{ color:"#8896AA" }}>Our team will contact you within 2 hours to schedule your free site visit.</p>
       </div>
     );
   }
@@ -41,11 +51,12 @@ function ContactForm() {
              style={{ background:"rgba(21,101,192,0.15)", border:"1px solid rgba(21,101,192,0.3)" }}>
           <span className="text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color:"#93C5FD" }}>Lead Capture</span>
         </div>
-        <h3 className="font-heading font-bold text-[22px] text-white mb-1.5">Contact form</h3>
+        <h3 className="font-heading font-bold text-[22px] text-white mb-1.5">Site visit form</h3>
         <p className="text-[12px] leading-[1.6]" style={{ color:"#8896AA" }}>
-          Start the conversation for electrical execution, lighting, automation, or maintenance.
+          Request an on-site assessment for planning, coordination, upgrades, or maintenance review.
         </p>
       </div>
+
       <form onSubmit={submit} className="px-6 pb-6 space-y-3">
         <input type="hidden" {...form.register("source")} value="WEBSITE" />
         <input type="hidden" {...form.register("sourcePage")} />
@@ -54,7 +65,7 @@ function ContactForm() {
         <input type="hidden" {...form.register("utmMedium")} />
         <input type="hidden" {...form.register("utmCampaign")} />
         <input type="hidden" {...form.register("status")} value="NEW" />
-        <input type="hidden" {...form.register("priority")} value="MEDIUM" />
+        <input type="hidden" {...form.register("priority")} value="HIGH" />
         <input tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" {...form.register("honeypot")} />
 
         <div className="grid grid-cols-2 gap-3">
@@ -69,6 +80,7 @@ function ContactForm() {
             {errors.phone && <p className="text-[10px] text-red-400 mt-1">{errors.phone.message}</p>}
           </div>
         </div>
+
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={labelCls}>Email</label>
@@ -85,10 +97,12 @@ function ContactForm() {
             </select>
           </div>
         </div>
+
         <div>
           <label className={labelCls}>Location</label>
           <input placeholder="Project city or site location" {...form.register("location")} className={inputCls} style={inputStyle} />
         </div>
+
         <div>
           <label className={labelCls}>Message</label>
           <textarea rows={3} placeholder="Tell us about the project, scope, urgency, or support requirement."
@@ -96,6 +110,8 @@ function ContactForm() {
             className="w-full rounded-[10px] px-4 py-3 text-[13px] font-medium transition-all outline-none focus:ring-2 focus:ring-[#1565C0] resize-none"
             style={inputStyle} />
         </div>
+
+        {/* Quick contact */}
         <div className="rounded-[10px] p-3 flex items-center gap-3"
              style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)" }}>
           <a href={`https://wa.me/${siteConfig.whatsapp}`} target="_blank" rel="noopener noreferrer"
@@ -107,12 +123,14 @@ function ContactForm() {
             📞 Call {siteConfig.phone}
           </a>
         </div>
+
         {!response.success && response.message && (
           <div className="rounded-[10px] px-4 py-3 text-[12px]"
                style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.25)", color:"#fca5a5" }}>
             {response.message}
           </div>
         )}
+
         <div className="flex items-center justify-between gap-3 pt-1">
           <p className="text-[10px] leading-[1.5]" style={{ color:"#5A6B82" }}>
             Leads go directly into the CRM with source tracking and activity logging.
@@ -120,7 +138,7 @@ function ContactForm() {
           <button type="submit" disabled={isPending}
             className="h-[42px] px-6 rounded-[10px] text-[13px] font-bold transition-all hover:brightness-110 whitespace-nowrap"
             style={{ background:"linear-gradient(135deg,#F5A623,#FFCC33)", color:"#050A14", boxShadow:"0 8px 24px rgba(245,166,35,0.3)" }}>
-            {isPending ? "Submitting..." : "Contact Eros"}
+            {isPending ? "Submitting..." : "Request site visit"}
           </button>
         </div>
       </form>
@@ -128,15 +146,7 @@ function ContactForm() {
   );
 }
 
-const contactDetails = [
-  { icon:"📞", label:"Phone", val:"+91 99201 11774", href:`tel:+919920111774` },
-  { icon:"💬", label:"WhatsApp", val:"99201 11774", href:`https://wa.me/919920111774` },
-  { icon:"✉️", label:"Email", val:"info@erosenterprises.in", href:`mailto:info@erosenterprises.in` },
-  { icon:"🌐", label:"Website", val:"erosenterprises.in", href:`https://erosenterprises.in` },
-  { icon:"⏰", label:"Hours", val:"Mon–Sat, 9:00am – 7:00pm", href:null as null|string },
-];
-
-export default function ContactPage() {
+export default function SiteVisitPage() {
   return (
     <>
       <div className="px-6 lg:px-10 py-14 lg:py-20"
@@ -147,72 +157,69 @@ export default function ContactPage() {
               <div className="eros-bc">
                 <Link href="/" className="hover:text-white transition-colors">Home</Link>
                 <span className="text-[#8896AA]">›</span>
-                <span className="bc-cur">Contact</span>
+                <span className="bc-cur">Request Site Visit</span>
               </div>
-              <div className="eros-eyebrow mb-1.5">Get In Touch</div>
+
+              <div className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 mb-5"
+                   style={{ background:"rgba(37,211,102,0.1)", border:"1px solid rgba(37,211,102,0.3)" }}>
+                <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#25D366]">100% Free — No Obligation</span>
+              </div>
+
               <h1 className="font-heading font-extrabold text-[36px] lg:text-[44px] text-white leading-[1.1] mb-4">
-                Let&apos;s <span style={{ color:"#F5A623" }}>Talk</span>
+                Book Your<br /><span style={{ color:"#F5A623" }}>Free Site Visit</span>
               </h1>
-              <p className="text-[15px] leading-[1.75] mb-8 max-w-[420px]" style={{ color:"#8896AA" }}>
-                Get in touch for a free site visit, product enquiry, quotation, or to discuss your project. We serve all of Mumbai and surrounding areas.
+              <p className="text-[15px] leading-[1.75] mb-8 max-w-[440px]" style={{ color:"#8896AA" }}>
+                Our expert visits your site, understands your requirement, and provides a comprehensive written assessment — at absolutely no cost.
               </p>
-              <div className="space-y-5 mb-8">
-                {contactDetails.map((c) => (
-                  <div key={c.label} className="flex gap-3.5 items-start">
-                    <div className="w-[42px] h-[42px] rounded-[10px] flex items-center justify-center text-[20px] flex-shrink-0"
-                         style={{ background:"rgba(21,101,192,0.14)", border:"1px solid rgba(21,101,192,0.22)" }}>
-                      {c.icon}
-                    </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-8">
+                {trustPoints.map((t) => (
+                  <div key={t.title} className="flex items-center gap-3 rounded-[12px] p-3"
+                       style={{ background:"rgba(15,31,61,0.6)", border:"1px solid rgba(21,101,192,0.2)" }}>
+                    <span className="text-[20px] flex-shrink-0">{t.icon}</span>
                     <div>
-                      <span className="block text-[13px] font-semibold text-white mb-0.5">{c.label}</span>
-                      {c.href ? (
-                        <a href={c.href} className="text-[13px] hover:text-white transition-colors" style={{ color:"#8896AA" }}>{c.val}</a>
-                      ) : (
-                        <span className="text-[13px]" style={{ color:"#8896AA" }}>{c.val}</span>
-                      )}
+                      <div className="text-[12px] font-bold text-white">{t.title}</div>
+                      <div className="text-[10px]" style={{ color:"#8896AA" }}>{t.sub}</div>
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* WhatsApp callout */}
-              <div className="rounded-[14px] p-5"
-                   style={{ background:"rgba(37,211,102,0.06)", border:"1px solid rgba(37,211,102,0.2)" }}>
-                <div className="font-bold text-[13px] mb-1.5 flex items-center gap-2" style={{ color:"#25D366" }}>
-                  💬 WhatsApp for Fastest Response
+              <div className="mb-6">
+                <div className="text-[10px] font-bold uppercase tracking-[0.12em] mb-3" style={{ color:"rgba(99,153,255,0.7)" }}>Areas we cover</div>
+                <div className="flex flex-wrap gap-2">
+                  {areas.map((a) => (
+                    <span key={a} className="px-3 py-1 rounded-full text-[11px] font-medium"
+                          style={{ background:"rgba(21,101,192,0.12)", border:"1px solid rgba(21,101,192,0.22)", color:"#93C5FD" }}>
+                      {a}
+                    </span>
+                  ))}
                 </div>
-                <p className="text-[12px] mb-3" style={{ color:"#8896AA" }}>Reply within 30 minutes during business hours. No sign-up needed.</p>
-                <a href={`https://wa.me/${siteConfig.whatsapp}`} target="_blank" rel="noopener noreferrer"
-                   className="inline-flex items-center gap-2 px-4 py-2 rounded-[8px] text-[12px] font-bold"
-                   style={{ background:"#25D366", color:"#050A14" }}>
-                  Open WhatsApp Chat
-                </a>
-              </div>
-
-              {/* Quick links to other form pages */}
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                <Link href="/get-quote"
-                  className="flex flex-col gap-1 p-4 rounded-[12px] hover:border-[rgba(245,166,35,0.4)] transition-colors"
-                  style={{ background:"rgba(15,31,61,0.6)", border:"1px solid rgba(21,101,192,0.2)" }}>
-                  <span className="text-[18px]">📋</span>
-                  <span className="text-[12px] font-bold text-white">Request a Quote</span>
-                  <span className="text-[10px]" style={{ color:"#8896AA" }}>Detailed 3-step form</span>
-                </Link>
-                <Link href="/site-visit"
-                  className="flex flex-col gap-1 p-4 rounded-[12px] hover:border-[rgba(37,211,102,0.4)] transition-colors"
-                  style={{ background:"rgba(15,31,61,0.6)", border:"1px solid rgba(21,101,192,0.2)" }}>
-                  <span className="text-[18px]">🏠</span>
-                  <span className="text-[12px] font-bold text-white">Book Site Visit</span>
-                  <span className="text-[10px]" style={{ color:"#8896AA" }}>Free on-site assessment</span>
-                </Link>
               </div>
             </div>
 
             <div>
               <Suspense fallback={<div className="rounded-[20px] h-96 animate-pulse" style={{ background:"rgba(10,22,40,0.92)" }} />}>
-                <ContactForm />
+                <SiteVisitForm />
               </Suspense>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-6 lg:px-10 py-6" style={{ background:"#0A1628", borderBottom:"1px solid rgba(21,101,192,0.15)" }}>
+        <div className="max-w-[1100px] mx-auto flex flex-wrap items-center justify-between gap-4">
+          <p className="text-[13px]" style={{ color:"#8896AA" }}>Questions before booking? Chat with our team instantly.</p>
+          <div className="flex gap-3">
+            <a href={`https://wa.me/${siteConfig.whatsapp}`} target="_blank" rel="noopener noreferrer"
+               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-[8px] text-[12px] font-bold"
+               style={{ background:"rgba(37,211,102,0.1)", border:"1px solid rgba(37,211,102,0.3)", color:"#25D366" }}>
+              💬 WhatsApp Us
+            </a>
+            <a href={`tel:${siteConfig.phone}`}
+               className="inline-flex items-center gap-2 bg-[#1565C0] hover:bg-[#1E7FE8] text-white px-4 py-2.5 rounded-[8px] text-[12px] font-bold transition-colors">
+              📞 {siteConfig.phone}
+            </a>
           </div>
         </div>
       </div>
