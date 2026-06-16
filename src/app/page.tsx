@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { siteConfig } from "@/config/site";
+import { QuoteForm } from "@/components/website/quote-form";
 
 const stats = [
   { num: "500+", label: "Projects Delivered" },
@@ -51,37 +52,56 @@ export default function HomePage() {
   return (
     <>
       {/* HERO */}
-      <section className="relative overflow-hidden px-6 lg:px-10 py-20 lg:py-24 min-h-[520px] flex items-center"
+      <section className="relative overflow-hidden px-6 lg:px-10 py-14 lg:py-20 flex items-center"
                style={{ background: "var(--e-hero-grad)" }}>
         <div className="absolute top-[-80px] right-[-60px] w-[440px] h-[440px] rounded-full pointer-events-none"
              style={{ background:"radial-gradient(circle,rgba(21,101,192,0.09) 0%,transparent 70%)" }} />
+        <div className="absolute bottom-[-40px] left-[30%] w-[280px] h-[280px] rounded-full pointer-events-none"
+             style={{ background:"radial-gradient(circle,rgba(245,166,35,0.04) 0%,transparent 70%)" }} />
         <div className="max-w-[1100px] mx-auto w-full relative z-10">
-          <div className="grid lg:grid-cols-[1fr_250px] gap-10 items-center">
-            <div>
+          <div className="grid lg:grid-cols-[1fr_400px] gap-10 lg:gap-14 items-start">
+
+            {/* Left — headline + stats */}
+            <div className="lg:pt-6">
               <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.06em] mb-5"
                    style={{ background:"var(--e-gold-dim)", border:"1px solid rgba(245,166,35,0.3)", color:"var(--e-gold)" }}>
                 Mumbai&apos;s Premier Lighting &amp; ELV Integrator
               </div>
-              <h1 className="font-heading font-extrabold text-[40px] lg:text-[50px] leading-[1.1] mb-4 max-w-[520px] text-white">
+              <h1 className="font-heading font-extrabold text-[38px] lg:text-[48px] leading-[1.1] mb-4 text-white">
                 Lighting that{" "}<em className="not-italic" style={{ color:"var(--e-gold)" }}>Elevates</em><br />Every Space
               </h1>
-              <p className="text-[15px] leading-[1.75] max-w-[460px] mb-7" style={{ color:"#8896AA" }}>
-                From chandelier installations to smart automation and security systems — Eros Enterprises designs, supplies, and maintains environments that inspire. Trusted by 500+ clients since 2009.
+              <p className="text-[14px] lg:text-[15px] leading-[1.75] max-w-[440px] mb-6" style={{ color:"#8896AA" }}>
+                From chandelier installations to smart automation and security — Eros Enterprises designs, supplies, and maintains environments that inspire. Trusted by 500+ clients since 2009.
               </p>
-              <div className="flex gap-3 flex-wrap">
-                <Link href="/contact" className="inline-flex items-center gap-2 bg-[#1565C0] hover:bg-[#1E7FE8] text-white px-5 py-3 rounded-[8px] text-[13px] font-semibold transition-colors">Book Free Site Visit</Link>
-                <Link href="/projects" className="inline-flex items-center gap-2 px-5 py-3 rounded-[8px] text-[13px] font-semibold text-white transition-colors"
-                      style={{ border:"1px solid rgba(255,255,255,0.18)" }}>View Projects</Link>
+
+              {/* Quick action buttons */}
+              <div className="flex gap-3 flex-wrap mb-8">
+                <Link href="/site-visit"
+                  className="inline-flex items-center gap-2 bg-[#1565C0] hover:bg-[#1E7FE8] text-white px-5 py-3 rounded-[8px] text-[13px] font-semibold transition-colors">
+                  📅 Book Free Site Visit
+                </Link>
+                <Link href="/projects"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-[8px] text-[13px] font-semibold text-white transition-colors"
+                  style={{ border:"1px solid rgba(255,255,255,0.18)" }}>
+                  📂 View Projects
+                </Link>
+              </div>
+
+              {/* Stats row */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {stats.map((s) => (
+                  <div key={s.label} className="rounded-[10px] px-3 py-3 text-center"
+                       style={{ background:"rgba(15,31,61,0.7)", border:"1px solid rgba(21,101,192,0.2)" }}>
+                    <div className="font-heading text-[22px] font-extrabold leading-none" style={{ color:"var(--e-gold)" }}>{s.num}</div>
+                    <div className="text-[9px] uppercase tracking-[0.05em] mt-1" style={{ color:"#8896AA" }}>{s.label}</div>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="flex flex-row lg:flex-col gap-2.5 flex-wrap">
-              {stats.map((s) => (
-                <div key={s.label} className="flex-1 min-w-[85px] rounded-[12px] px-4 py-3.5 text-center"
-                     style={{ background:"rgba(15,31,61,0.85)", border:"1px solid rgba(21,101,192,0.22)" }}>
-                  <div className="font-heading text-[28px] font-extrabold leading-none" style={{ color:"var(--e-gold)" }}>{s.num}</div>
-                  <div className="text-[10px] uppercase tracking-[0.05em] mt-1" style={{ color:"#8896AA" }}>{s.label}</div>
-                </div>
-              ))}
+
+            {/* Right — embedded 3-step QuoteForm */}
+            <div className="w-full">
+              <QuoteForm sourcePage="/" compact={true} />
             </div>
           </div>
         </div>
