@@ -401,10 +401,12 @@ model Invoice {
   totalAmount    Decimal       @default(0) @db.Decimal(12, 2)
   paidAmount     Decimal       @default(0) @db.Decimal(12, 2)
   balanceAmount  Decimal       @default(0) @db.Decimal(12, 2)
-  sentAt         DateTime?
-  paidAt         DateTime?
-  overdueAt      DateTime?
-  cancelledAt    DateTime?
+  sentAt                 DateTime?
+  paidAt                 DateTime?
+  overdueAt              DateTime?
+  cancelledAt            DateTime?
+  razorpayPaymentLinkId  String?
+  razorpayPaymentLinkUrl String?
   items          InvoiceItem[]
   payments       Payment[]
   activities     ActivityLog[]
@@ -448,12 +450,16 @@ model Payment {
   lead          Lead?         @relation(fields: [leadId], references: [id], onDelete: SetNull)
   customerId    String?
   customer      Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  amount        Decimal       @default(0) @db.Decimal(12, 2)
-  method        PaymentMethod
-  paidAt        DateTime      @default(now())
-  reference     String?
-  notes         String?
-  activities    ActivityLog[]
+  amount               Decimal       @default(0) @db.Decimal(12, 2)
+  method               PaymentMethod
+  status               String        @default("CAPTURED")
+  paidAt               DateTime      @default(now())
+  reference            String?
+  transactionReference String?
+  notes                String?
+  razorpayPaymentId    String?       @unique
+  razorpayOrderId      String?
+  activities           ActivityLog[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
