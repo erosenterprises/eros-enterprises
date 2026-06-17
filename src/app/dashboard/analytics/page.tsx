@@ -55,8 +55,8 @@ export default async function AnalyticsPage() {
     : "0%";
 
   const kpis = [
-    { label: "Total Revenue",     value: formatCurrency(Number(billing.totalPaidAmount ?? 0)),    icon: "💰", color: "#25D366" },
-    { label: "Pending Payments",  value: formatCurrency(Number(billing.totalBalanceAmount ?? 0)), icon: "⏳", color: "#F5A623" },
+    { label: "Total Revenue",     value: formatCurrency(Number(billing.collectedAmount ?? 0)),   icon: "💰", color: "#25D366" },
+    { label: "Pending Payments",  value: formatCurrency(Number(billing.pendingAmount ?? 0)),      icon: "⏳", color: "#F5A623" },
     { label: "Total Leads",       value: String(m.totalLeads),                                    icon: "👤", color: "#1565C0" },
     { label: "Conversion Rate",   value: conversionRate,                                          icon: "📈", color: "#8B5CF6" },
     { label: "Active AMC Plans",  value: String(m.dueSoonAmcCount),                               icon: "🔧", color: "#1565C0" },
