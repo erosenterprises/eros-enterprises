@@ -2,11 +2,14 @@
 
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import Script from "next/script";
 
 import { Footer } from "@/components/website/footer";
 import { Navbar } from "@/components/website/navbar";
 import { ThemeProvider } from "@/components/website/theme-provider";
 import { siteConfig } from "@/config/site";
+
+const TIDIO_KEY = process.env.NEXT_PUBLIC_TIDIO_KEY;
 
 export function SiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -57,6 +60,14 @@ export function SiteShell({ children }: { children: ReactNode }) {
             📋 Quick Quote
           </a>
         </div>
+
+        {/* Tidio Live Chat */}
+        {TIDIO_KEY && (
+          <Script
+            src={`//code.tidio.co/${TIDIO_KEY}.js`}
+            strategy="lazyOnload"
+          />
+        )}
       </div>
     </ThemeProvider>
   );
