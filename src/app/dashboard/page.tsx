@@ -40,258 +40,177 @@ function getLeadStatusStyle(status: string): { bg: string; color: string } {
 
 function getLeadStatusLabel(status: string): string {
   const labels: Record<string, string> = {
-    NEW: "New",
-    CONTACTED: "Contacted",
-    QUALIFIED: "Qualified",
-    SITE_VISIT_SCHEDULED: "Site Visit",
-    QUOTATION_SENT: "Quoted",
-    WON: "Won",
-    LOST: "Lost",
+    NEW: "New", CONTACTED: "Contacted", QUALIFIED: "Qualified",
+    SITE_VISIT_SCHEDULED: "Site Visit", QUOTATION_SENT: "Quoted",
+    WON: "Won", LOST: "Lost",
   };
   return labels[status] ?? status;
 }
 
+const FALLBACK_OVERVIEW = {
+  metrics: {
+    totalLeads: 0, newLeads: 0, contactedLeads: 0, qualifiedLeads: 0,
+    siteVisitsScheduled: 0, wonLeads: 0, lostLeads: 0, totalCustomers: 0,
+    activeProjects: 0, completedProjects: 0, delayedOrOnHoldProjects: 0,
+    dueSoonAmcCount: 0, expiredAmcCount: 0,
+  },
+  recentLeads: [] as Array<{
+    id: string; leadNumber: string; name: string; phone: string;
+    serviceInterest: string | null; status: string; priority: string; createdAt: Date;
+  }>,
+  upcomingSiteVisits: [] as Array<{
+    id: string; visitNumber: string; scheduledAt: Date; address: string | null;
+    status: string; serviceInterest: string | null;
+    lead: { name: string } | null; customer: { legalName: string } | null;
+  }>,
+  upcomingRenewals: [],
+  statusSummary: [],
+  funnel: [
+    { label: "New", value: 0 }, { label: "Contacted", value: 0 },
+    { label: "Qualified", value: 0 }, { label: "Won", value: 0 },
+  ],
+};
+
+const FALLBACK_BILLING = { quotedValue: 0, invoicedValue: 0, collectedAmount: 0, pendingAmount: 0 };
+
 export default async function DashboardPage() {
-  const [overview, billingMetrics, invoices] = await Promise.all([
-    getDashboardOverview(),
-    getBillingDashboardMetrics(),
-    getInvoices({}),
-  ]);
+  let overview = FALLBACK_OVERVIEW;
+  let billingMetrics = FALLBACK_BILLING;
+  let invoices: Awaited<ReturnType<typeof getInvoices>> = [];
+
+  try {
+    [overview, billingMetrics, invoices] = await Promise.all([
+      getDashboardOverview(),
+      getBillingDashboardMetrics(),
+      getInvoices({}),
+    ]);
+  } catch (err) {
+    console.error("[dashboard] Data fetch failed — showing empty state:", err);
+  }
 
   const openInvoiceCount = invoices.filter(
-    (inv) => inv.effectiveStatus === "SENT" || inv.effectiveStatus === "PARTIALLY_PAID",
+    (inv: { effectiveStatus: string }) => inv.effectiveStatus === "SENT" || inv.effectiveStatus === "PARTIALLY_PAID",
   ).length;
 
+  const m = overview.metrics;
+
   const kpis = [
-    {
-      label: "Total leads",
-      value: overview.metrics.totalLeads.toString(),
-      delta: overview.metrics.totalLeads === 0 ? "Ready to start" : `${overview.metrics.newLeads} new`,
-    },
-    {
-      label: "Quoted value",
-      value: formatCurrency(billingMetrics.quotedValue),
-      delta: billingMetrics.quotedValue === 0 ? "Ready to start" : "Pipeline value",
-    },
-    {
-      label: "Site visits",
-      value: overview.metrics.siteVisitsScheduled.toString(),
-      delta: overview.metrics.siteVisitsScheduled === 0 ? "Ready to start" : "Scheduled",
-    },
-    {
-      label: "Open invoices",
-      value: openInvoiceCount.toString(),
-      delta: openInvoiceCount === 0 ? "Ready to start" : "Awaiting payment",
-    },
+    { label: "Total leads", value: m.totalLeads.toString(), delta: m.totalLeads === 0 ? "Ready to start" : `${m.newLeads} new` },
+    { label: "Customers", value: m.totalCustomers.toString(), delta: "Active accounts" },
+    { label: "Revenue collected", value: formatCurrency(billingMetrics.collectedAmount), delta: `${formatCurrency(billingMetrics.pendingAmount)} pending` },
+    { label: "Open invoices", value: openInvoiceCount.toString(), delta: "Awaiting payment" },
+    { label: "Site visits", value: m.siteVisitsScheduled.toString(), delta: "Upcoming" },
+    { label: "AMC renewals", value: m.dueSoonAmcCount.toString(), delta: "Due soon" },
   ];
 
-  const quickTiles = [
-    { label: "Lead pipeline", href: "/dashboard/leads", color: "#1565C0", bg: "rgba(21,101,192,0.12)", Icon: Users },
-    { label: "Quotations", href: "/dashboard/quotations", color: "#F5A623", bg: "rgba(245,166,35,0.1)", Icon: FileText },
-    { label: "WhatsApp inbox", href: "/dashboard/whatsapp", color: "#25D366", bg: "rgba(37,211,102,0.1)", Icon: MessageSquare },
-    { label: "Site visits", href: "/dashboard/site-visits", color: "#EF5350", bg: "rgba(239,83,80,0.1)", Icon: Calendar },
+  const navCards = [
+    { href: "/dashboard/leads", icon: <Users className="w-5 h-5" />, label: "Leads", desc: "Pipeline & CRM" },
+    { href: "/dashboard/quotations", icon: <FileText className="w-5 h-5" />, label: "Quotations", desc: "Create & send" },
+    { href: "/dashboard/invoices", icon: <Receipt className="w-5 h-5" />, label: "Invoices", desc: "Billing & payments" },
+    { href: "/dashboard/site-visits", icon: <Calendar className="w-5 h-5" />, label: "Site Visits", desc: "Schedule & track" },
+    { href: "/dashboard/whatsapp", icon: <MessageSquare className="w-5 h-5" />, label: "WhatsApp", desc: "Inbox & replies" },
+    { href: "/dashboard/analytics", icon: <Receipt className="w-5 h-5" />, label: "Analytics", desc: "Reports & charts" },
   ];
 
   return (
-    <DashboardShell title="Overview" subtitle="Live CRM snapshot">
+    <DashboardShell title="Dashboard" subtitle="Eros Enterprises CRM">
       <div className="px-4 py-5 space-y-6">
 
-        {/* Section A — KPI 2×2 grid */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* KPI grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
           {kpis.map((kpi) => (
-            <div
-              key={kpi.label}
-              className="rounded-[10px] p-4"
-              style={{
-                background: "#0F1F3D",
-                border: "0.5px solid rgba(255,255,255,0.07)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "22px",
-                  fontWeight: 800,
-                  color: "#F5A623",
-                  lineHeight: 1.15,
-                  wordBreak: "break-all",
-                }}
-              >
-                {kpi.value}
-              </div>
-              <div
-                className="mt-1 uppercase tracking-[0.04em]"
-                style={{ fontSize: "9px", color: "rgba(255,255,255,0.45)" }}
-              >
-                {kpi.label}
-              </div>
-              <div
-                className="mt-1.5"
-                style={{ fontSize: "9px", color: "rgba(255,255,255,0.3)" }}
-              >
-                {kpi.delta}
-              </div>
+            <div key={kpi.label} className="rounded-[12px] p-4"
+                 style={{ background: "#0F1F3D", border: "1px solid rgba(21,101,192,0.22)" }}>
+              <div className="text-[10px] uppercase tracking-[0.08em] mb-1"
+                   style={{ color: "rgba(255,255,255,0.35)" }}>{kpi.label}</div>
+              <div className="font-bold text-[22px] text-white mb-1">{kpi.value}</div>
+              <div className="text-[11px]" style={{ color: "#8896AA" }}>{kpi.delta}</div>
             </div>
           ))}
         </div>
 
-        {/* Section B — Quick access tiles 2×2 */}
-        <div>
-          <div
-            className="mb-3 uppercase tracking-[0.06em]"
-            style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)" }}
-          >
-            Quick access
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {quickTiles.map((tile) => (
-              <Link
-                key={tile.label}
-                href={tile.href}
-                className="flex items-center gap-3 rounded-[10px] p-4 transition-opacity active:opacity-70"
-                style={{
-                  background: tile.bg,
-                  border: "0.5px solid rgba(255,255,255,0.07)",
-                }}
-              >
-                <div
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                  style={{ background: `${tile.color}18`, color: tile.color }}
-                >
-                  <tile.Icon size={18} />
-                </div>
-                <span
-                  style={{ fontSize: "12px", fontWeight: 500, color: "#FFFFFF", lineHeight: 1.3 }}
-                >
-                  {tile.label}
-                </span>
-              </Link>
-            ))}
-          </div>
+        {/* Nav cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+          {navCards.map((card) => (
+            <Link key={card.href} href={card.href}
+                  className="rounded-[12px] p-4 flex items-center gap-3 transition-all hover:border-[#1565C0]"
+                  style={{ background: "#0F1F3D", border: "1px solid rgba(21,101,192,0.22)" }}>
+              <div className="w-9 h-9 rounded-[8px] flex items-center justify-center flex-shrink-0"
+                   style={{ background: "rgba(21,101,192,0.15)", color: "#93C5FD" }}>
+                {card.icon}
+              </div>
+              <div>
+                <div className="text-[13px] font-semibold text-white">{card.label}</div>
+                <div className="text-[11px]" style={{ color: "#8896AA" }}>{card.desc}</div>
+              </div>
+            </Link>
+          ))}
         </div>
 
-        {/* Section C — Recent leads */}
-        <div>
-          <div className="mb-3 flex items-center justify-between">
-            <div
-              className="uppercase tracking-[0.06em]"
-              style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)" }}
-            >
-              Recent leads
+        {/* Recent leads */}
+        {overview.recentLeads.length > 0 && (
+          <div className="rounded-[12px] overflow-hidden"
+               style={{ background: "#0F1F3D", border: "1px solid rgba(21,101,192,0.22)" }}>
+            <div className="px-4 py-3 flex items-center justify-between"
+                 style={{ borderBottom: "1px solid rgba(21,101,192,0.15)" }}>
+              <span className="text-[12px] font-semibold text-white">Recent Leads</span>
+              <Link href="/dashboard/leads"
+                    className="text-[11px]" style={{ color: "#93C5FD" }}>View all →</Link>
             </div>
-            <Link
-              href="/dashboard/leads"
-              style={{ fontSize: "11px", color: "#F5A623", whiteSpace: "nowrap", flexShrink: 0 }}
-            >
-              See all
-            </Link>
-          </div>
-
-          {overview.recentLeads.length > 0 ? (
-            <div className="space-y-2">
-              {overview.recentLeads.slice(0, 5).map((lead) => {
-                const statusStyle = getLeadStatusStyle(lead.status);
-                const isHot = lead.priority === "HIGH" || lead.priority === "URGENT";
-                const initials = getInitials(lead.name);
-
+            <div className="divide-y" style={{ borderColor: "rgba(21,101,192,0.1)" }}>
+              {overview.recentLeads.map((lead) => {
+                const style = getLeadStatusStyle(lead.status);
                 return (
-                  <Link
-                    key={lead.id}
-                    href={`/dashboard/leads/${lead.id}`}
-                    className="flex items-center gap-3 rounded-[10px] px-3 py-3 transition-opacity active:opacity-70"
-                    style={{
-                      background: "#0F1F3D",
-                      border: "0.5px solid rgba(255,255,255,0.07)",
-                      borderLeft: `2.5px solid ${isHot ? "#EF5350" : "#1565C0"}`,
-                    }}
-                  >
-                    <div
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-                      style={{ background: "rgba(21,101,192,0.25)", color: "#90CAF9" }}
-                    >
-                      {initials}
+                  <Link key={lead.id} href={`/dashboard/leads/${lead.id}`}
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-[11px] font-bold"
+                         style={{ background: "rgba(21,101,192,0.2)", color: "#93C5FD" }}>
+                      {getInitials(lead.name)}
                     </div>
-                    <div className="min-w-0 flex-1" style={{ overflow: "hidden" }}>
-                      <div
-                        className="font-medium"
-                        style={{
-                          fontSize: "13px",
-                          color: "#FFFFFF",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {lead.name}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "11px",
-                          color: "rgba(255,255,255,0.4)",
-                          marginTop: "1px",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {lead.serviceInterest} · {timeAgo(new Date(lead.createdAt))}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[12px] font-semibold text-white truncate">{lead.name}</div>
+                      <div className="text-[10px] truncate" style={{ color: "#8896AA" }}>
+                        {lead.serviceInterest ?? "General enquiry"} · {timeAgo(new Date(lead.createdAt))}
                       </div>
                     </div>
-                    <div
-                      className="shrink-0 rounded-full px-2 py-0.5 text-center"
-                      style={{
-                        fontSize: "10px",
-                        fontWeight: 600,
-                        background: statusStyle.bg,
-                        color: statusStyle.color,
-                      }}
-                    >
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+                          style={{ background: style.bg, color: style.color }}>
                       {getLeadStatusLabel(lead.status)}
-                    </div>
+                    </span>
                   </Link>
                 );
               })}
             </div>
-          ) : (
-            <div
-              className="rounded-[10px] p-6 text-center"
-              style={{
-                border: "1px dashed rgba(255,255,255,0.1)",
-                background: "rgba(255,255,255,0.02)",
-              }}
-            >
-              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.3)" }}>
-                No leads yet — enquiries will appear here
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Section D — WhatsApp connect banner */}
-        <Link
-          href="/dashboard/whatsapp"
-          className="flex items-center gap-4 rounded-[12px] p-4 transition-opacity active:opacity-80"
-          style={{
-            background: "#0F3028",
-            border: "1px solid rgba(37,211,102,0.2)",
-          }}
-        >
-          <div
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-            style={{ background: "rgba(37,211,102,0.15)", color: "#25D366" }}
-          >
-            <MessageSquare size={22} />
           </div>
-          <div className="flex-1">
-            <div style={{ fontSize: "13px", fontWeight: 600, color: "#FFFFFF" }}>
-              Activate WhatsApp automation
+        )}
+
+        {/* Upcoming site visits */}
+        {overview.upcomingSiteVisits.length > 0 && (
+          <div className="rounded-[12px] overflow-hidden"
+               style={{ background: "#0F1F3D", border: "1px solid rgba(21,101,192,0.22)" }}>
+            <div className="px-4 py-3 flex items-center justify-between"
+                 style={{ borderBottom: "1px solid rgba(21,101,192,0.15)" }}>
+              <span className="text-[12px] font-semibold text-white">Upcoming Site Visits</span>
+              <Link href="/dashboard/site-visits"
+                    className="text-[11px]" style={{ color: "#93C5FD" }}>View all →</Link>
             </div>
-            <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", marginTop: "2px" }}>
-              Auto-reply, lead capture, follow-ups
+            <div className="divide-y" style={{ borderColor: "rgba(21,101,192,0.1)" }}>
+              {overview.upcomingSiteVisits.map((visit) => (
+                <div key={visit.id} className="px-4 py-3">
+                  <div className="text-[12px] font-semibold text-white">
+                    {visit.lead?.name ?? visit.customer?.legalName ?? "Client"}
+                  </div>
+                  <div className="text-[10px] mt-0.5" style={{ color: "#8896AA" }}>
+                    {new Date(visit.scheduledAt).toLocaleDateString("en-IN", {
+                      day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+                    })}
+                    {visit.address ? ` · ${visit.address}` : ""}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-          <Receipt size={16} color="rgba(37,211,102,0.6)" />
-        </Link>
-
+        )}
       </div>
     </DashboardShell>
   );
