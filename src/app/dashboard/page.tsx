@@ -63,8 +63,8 @@ const FALLBACK_OVERVIEW = {
     status: string; serviceInterest: string | null;
     lead: { name: string } | null; customer: { legalName: string } | null;
   }>,
-  upcomingRenewals: [],
-  statusSummary: [],
+  upcomingRenewals: [] as unknown[],
+  statusSummary: [] as unknown[],
   funnel: [
     { label: "New", value: 0 }, { label: "Contacted", value: 0 },
     { label: "Qualified", value: 0 }, { label: "Won", value: 0 },
