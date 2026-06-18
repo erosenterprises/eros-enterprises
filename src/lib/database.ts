@@ -14,6 +14,11 @@ const RECOVERABLE_DATABASE_ERROR_CODES = new Set([
   "ECONNREFUSED",
   "ECONNRESET",
   "ETIMEDOUT",
+  "ENOTFOUND",
+  "DEPTH_ZERO_SELF_SIGNED_CERT",
+  "SELF_SIGNED_CERT_IN_CHAIN",
+  "ERR_SSL_WRONG_VERSION_NUMBER",
+  "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
 ]);
 
 function isErrorWithCode(
@@ -55,7 +60,17 @@ export function isRecoverableDatabaseError(error: unknown) {
       message.includes("does not exist in the current database") ||
       message.includes("table") && message.includes("does not exist") ||
       message.includes("connection refused") ||
-      message.includes("failed to connect")
+      message.includes("failed to connect") ||
+      // SSL errors from Railway public proxy
+      message.includes("ssl") ||
+      message.includes("certificate") ||
+      message.includes("self signed") ||
+      message.includes("handshake") ||
+      message.includes("enotfound") ||
+      message.includes("econnrefused") ||
+      message.includes("etimedout") ||
+      message.includes("connect timeout") ||
+      message.includes("getaddrinfo")
     );
   }
 
@@ -97,6 +112,8 @@ export async function withDatabaseFallback<T>(
     return await operation();
   } catch (error) {
     if (!isRecoverableDatabaseError(error)) {
+      // Log unrecognised errors before re-throwing so Vercel logs show them
+      console.error(`[database:${scope}] Unrecoverable error:`, error);
       throw error;
     }
 
